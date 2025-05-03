@@ -4,15 +4,14 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
-// Firebase configuration
-// In a production app, you should use environment variables
+// Firebase configuration from your google-services.json
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY", // Replace with your Firebase API key
-  authDomain: "YOUR_AUTH_DOMAIN", // Replace with your Firebase auth domain
-  projectId: "YOUR_PROJECT_ID", // Replace with your Firebase project ID
-  storageBucket: "YOUR_STORAGE_BUCKET", // Replace with your Firebase storage bucket
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID", // Replace with your Firebase messaging sender ID
-  appId: "YOUR_APP_ID", // Replace with your Firebase app ID
+  apiKey: "AIzaSyAP3xpyC1fcxZLc-5iQn1WxLVQsoMj5Bvo",
+  authDomain: "agroconnect-a2813.firebaseapp.com",
+  projectId: "agroconnect-a2813",
+  storageBucket: "agroconnect-a2813.firebasestorage.app",
+  messagingSenderId: "154016992684",
+  appId: "1:154016992684:android:40a7949241e74020143e09"
 };
 
 // Initialize Firebase

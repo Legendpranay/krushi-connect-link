@@ -16,7 +16,12 @@ import MorePage from "./pages/MorePage";
 import RoleSelectionPage from "./pages/RoleSelectionPage";
 import CompleteFarmerProfilePage from "./pages/CompleteFarmerProfilePage";
 import CompleteDriverProfilePage from "./pages/CompleteDriverProfilePage";
+import DriverProfilePage from "./pages/DriverProfilePage";
+import CreateBookingPage from "./pages/CreateBookingPage";
+import DriverServicesPage from "./pages/DriverServicesPage";
+import DriverEarningsPage from "./pages/DriverEarningsPage";
 import NotFound from "./pages/NotFound";
+import "mapbox-gl/dist/mapbox-gl.css";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +34,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
+              <Route path="/index" element={<Index />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/select-role" element={<RoleSelectionPage />} />
               <Route path="/complete-farmer-profile" element={<CompleteFarmerProfilePage />} />
@@ -38,6 +44,10 @@ const App = () => (
               <Route path="/bookings" element={<BookingsPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/more" element={<MorePage />} />
+              <Route path="/driver/profile/:driverId" element={<DriverProfilePage />} />
+              <Route path="/booking/new/:driverId" element={<CreateBookingPage />} />
+              <Route path="/driver-services" element={<DriverServicesPage />} />
+              <Route path="/driver-earnings" element={<DriverEarningsPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

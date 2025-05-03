@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../lib/firebase';
+import LocationMap from './map/LocationMap';
 
 const FarmerProfileForm = () => {
   const { userProfile, updateUserProfile } = useAuth();
@@ -20,8 +21,14 @@ const FarmerProfileForm = () => {
     village: userProfile?.village || '',
     district: userProfile?.district || '',
     state: userProfile?.state || '',
-    farmSize: 0,
+    farmSize: userProfile?.farmSize || 0,
   });
+  
+  const [selectedLocation, setSelectedLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    address: string;
+  } | null>(null);
   
   const [profileImage, setProfileImage] = useState<File | null>(null);
 
@@ -39,6 +46,19 @@ const FarmerProfileForm = () => {
     }
   };
 
+  const handleLocationSelect = (location: { latitude: number; longitude: number; address: string }) => {
+    setSelectedLocation(location);
+    // Extract village from address if possible
+    const addressParts = location.address.split(',');
+    if (addressParts.length >= 2) {
+      const possibleVillage = addressParts[0].trim();
+      setFormData(prev => ({
+        ...prev,
+        village: prev.village || possibleVillage
+      }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -53,11 +73,18 @@ const FarmerProfileForm = () => {
         profileImageUrl = await getDownloadURL(imageRef);
       }
       
+      // Prepare location data if selected
+      const farmLocation = selectedLocation ? {
+        latitude: selectedLocation.latitude,
+        longitude: selectedLocation.longitude
+      } : undefined;
+      
       // Update user profile
       await updateUserProfile({
         ...formData,
         profileImage: profileImageUrl,
         isProfileComplete: true,
+        farmLocation
       });
       
       toast({
@@ -96,6 +123,17 @@ const FarmerProfileForm = () => {
             value={formData.name}
             onChange={handleChange}
             required
+          />
+        </div>
+        
+        {/* Location Map */}
+        <div className="form-input-group">
+          <label className="form-label mb-2">
+            Select your farm location*
+          </label>
+          <LocationMap 
+            onLocationSelect={handleLocationSelect}
+            height="300px"
           />
         </div>
         

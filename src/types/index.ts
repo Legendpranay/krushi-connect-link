@@ -19,6 +19,8 @@ export interface UserProfile {
   tractorImage?: string;
   licenseImage?: string;
   farmSize?: number;
+  farmLocation?: GeoPoint;
+  location?: GeoPoint;
 }
 
 export interface DriverProfile extends UserProfile {

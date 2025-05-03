@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -162,10 +161,8 @@ const DriverProfileForm = () => {
         profileImage: profileImageUrl,
         tractorImage: tractorImageUrl,
         licenseImage: licenseImageUrl,
-        equipment: savedEquipment,
-        isVerified: false, // Admin needs to verify
-        isActive: true,
-        isProfileComplete: true
+        isProfileComplete: true,
+        role: 'driver' as const
       });
       
       toast({

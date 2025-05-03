@@ -11,23 +11,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
-
-// User roles
-export type UserRole = 'farmer' | 'driver' | 'admin' | null;
-
-// User profile type
-export interface UserProfile {
-  id: string;
-  phone: string;
-  name?: string;
-  role: UserRole;
-  village?: string;
-  district?: string;
-  state?: string;
-  profileImage?: string;
-  isProfileComplete: boolean;
-  createdAt: Date;
-}
+import { UserProfile, UserRole } from '../types';
 
 // Auth context type
 interface AuthContextType {

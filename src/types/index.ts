@@ -98,6 +98,10 @@ export interface Booking {
   driverFeedback?: string;
   createdAt: Date;
   updatedAt: Date;
+  reminderCount?: number;
+  lastReminderSent?: Date;
+  paymentDate?: Date;
+  paymentId?: string;
 }
 
 export interface Review {

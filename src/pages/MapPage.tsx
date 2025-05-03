@@ -11,8 +11,15 @@ import { Search, Star } from 'lucide-react';
 import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { DriverProfile, GeoPoint } from '../types';
-import LocationMap from '../components/map/LocationMap';
+import LeafletMap from '../components/map/LeafletMap';
 import { toast } from '@/components/ui/use-toast';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const MapPage = () => {
   const { userProfile } = useAuth();
@@ -27,6 +34,7 @@ const MapPage = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDriverId, setSelectedDriverId] = useState<string | null>(null);
+  const [maxDistance, setMaxDistance] = useState<number>(10); // 10km default radius
 
   useEffect(() => {
     const fetchDrivers = async () => {
@@ -162,8 +170,22 @@ const MapPage = () => {
     return (distanceA || 9999) - (distanceB || 9999);
   });
 
+  // Filter drivers by distance
+  const driversWithinDistance = sortedDrivers.filter(driver => {
+    if (!driver.location) return false;
+    
+    const distance = calculateDistance(
+      userLocation.latitude,
+      userLocation.longitude,
+      driver.location.latitude,
+      driver.location.longitude
+    );
+    
+    return distance !== null && distance <= maxDistance;
+  });
+
   // Prepare map markers
-  const mapMarkers = sortedDrivers.map(driver => ({
+  const mapMarkers = driversWithinDistance.map(driver => ({
     id: driver.id,
     latitude: driver.location?.latitude || 0,
     longitude: driver.location?.longitude || 0,
@@ -176,33 +198,56 @@ const MapPage = () => {
       <div className="mb-4 p-4">
         <h2 className="text-2xl font-bold mb-4">{t('map.nearbyDrivers')}</h2>
         
-        {/* Search bar */}
-        <div className="relative mb-4">
-          <Input
-            type="text"
-            placeholder={t('map.searchLocation')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-          <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+        <div className="flex flex-wrap gap-4 mb-4">
+          {/* Search bar */}
+          <div className="relative flex-1">
+            <Input
+              type="text"
+              placeholder={t('map.searchLocation')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+            <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+          </div>
+          
+          {/* Distance filter */}
+          <div className="w-32">
+            <Select 
+              value={maxDistance.toString()} 
+              onValueChange={(value) => setMaxDistance(parseInt(value))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Distance" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5 km</SelectItem>
+                <SelectItem value="10">10 km</SelectItem>
+                <SelectItem value="20">20 km</SelectItem>
+                <SelectItem value="50">50 km</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         
         {/* Map */}
         <div className="mb-6">
-          <LocationMap
+          <LeafletMap
             initialLocation={userLocation}
             onLocationSelect={handleLocationSelect}
-            showMarkers={true}
-            markers={mapMarkers}
+            showMarkers={false}
+            drivers={driversWithinDistance}
             height="300px"
+            maxDistance={maxDistance}
           />
         </div>
       </div>
 
       {/* Nearby drivers list */}
       <div className="mb-4 px-4">
-        <h3 className="text-lg font-semibold mb-4">{t('map.nearbyDrivers')}</h3>
+        <h3 className="text-lg font-semibold mb-4">
+          {t('map.nearbyDrivers')} ({driversWithinDistance.length})
+        </h3>
         
         {/* Driver cards */}
         {isLoading ? (
@@ -210,9 +255,9 @@ const MapPage = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto"></div>
             <p className="mt-4">{t('common.loading')}</p>
           </div>
-        ) : sortedDrivers.length > 0 ? (
+        ) : driversWithinDistance.length > 0 ? (
           <div className="space-y-4">
-            {sortedDrivers.map(driver => {
+            {driversWithinDistance.map(driver => {
               const distance = driver.location ? 
                 calculateDistance(
                   userLocation.latitude,
@@ -278,7 +323,7 @@ const MapPage = () => {
           </div>
         ) : (
           <div className="text-center p-8 bg-muted rounded-lg">
-            <p>No drivers found in your area. Try adjusting your search or location.</p>
+            <p>No drivers found within {maxDistance}km of your location. Try adjusting your search or location.</p>
           </div>
         )}
       </div>

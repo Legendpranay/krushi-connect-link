@@ -29,6 +29,10 @@ const RoleSelectionForm = () => {
       } else if (role === 'driver') {
         navigate('/complete-driver-profile');
       } else if (role === 'admin') {
+        // Admins don't have a profile completion form, they go straight to the admin dashboard
+        await updateUserProfile({
+          isProfileComplete: true
+        });
         navigate('/admin');
       }
       
@@ -74,6 +78,18 @@ const RoleSelectionForm = () => {
           <span className="flex items-center">
             <span className="text-2xl mr-4">🚜</span>
             <span>{t('auth.driver')}</span>
+          </span>
+        </Button>
+
+        <Button
+          onClick={() => handleSelectRole('admin')}
+          className="w-full h-16 text-lg justify-start px-6"
+          disabled={isLoading}
+          variant="secondary"
+        >
+          <span className="flex items-center">
+            <span className="text-2xl mr-4">👨‍💼</span>
+            <span>Admin</span>
           </span>
         </Button>
       </div>

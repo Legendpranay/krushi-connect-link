@@ -21,8 +21,9 @@ import CreateBookingPage from "./pages/CreateBookingPage";
 import DriverServicesPage from "./pages/DriverServicesPage";
 import DriverEarningsPage from "./pages/DriverEarningsPage";
 import NotFound from "./pages/NotFound";
-// Import mapbox CSS
-import "mapbox-gl/dist/mapbox-gl.css";
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
+// Import Leaflet CSS
+import 'leaflet/dist/leaflet.css';
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
               <Route path="/booking/new/:driverId" element={<CreateBookingPage />} />
               <Route path="/driver-services" element={<DriverServicesPage />} />
               <Route path="/driver-earnings" element={<DriverEarningsPage />} />
+              <Route path="/admin/*" element={<AdminDashboardPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

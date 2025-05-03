@@ -6,6 +6,7 @@ import {
   PhoneAuthProvider,
   RecaptchaVerifier,
   signOut,
+  signInWithCredential,
   User as FirebaseUser
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -21,6 +22,8 @@ export interface UserProfile {
   name?: string;
   role: UserRole;
   village?: string;
+  district?: string;
+  state?: string;
   profileImage?: string;
   isProfileComplete: boolean;
   createdAt: Date;
@@ -130,7 +133,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const confirmOtp = async (verificationId: string, otp: string) => {
     try {
       const credential = PhoneAuthProvider.credential(verificationId, otp);
-      const result = await auth.signInWithCredential(credential);
+      const result = await signInWithCredential(auth, credential);
       return { success: true, user: result.user };
     } catch (error) {
       console.error("Error confirming OTP:", error);

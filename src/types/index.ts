@@ -15,6 +15,10 @@ export interface UserProfile {
   isProfileComplete: boolean;
   createdAt: Date;
   language?: Language;
+  // Add properties that are used in both DriverProfile and FarmerProfile
+  tractorImage?: string;
+  licenseImage?: string;
+  farmSize?: number;
 }
 
 export interface DriverProfile extends UserProfile {

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import DriverProfileForm from '../components/DriverProfileForm';
+import DriverProfileForm from '../components/driver/DriverProfileForm';
 import UserContainer from '../components/UserContainer';
 
 const CompleteDriverProfilePage = () => {

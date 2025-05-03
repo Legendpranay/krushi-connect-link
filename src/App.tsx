@@ -21,6 +21,7 @@ import CreateBookingPage from "./pages/CreateBookingPage";
 import DriverServicesPage from "./pages/DriverServicesPage";
 import DriverEarningsPage from "./pages/DriverEarningsPage";
 import NotFound from "./pages/NotFound";
+// Import mapbox CSS
 import "mapbox-gl/dist/mapbox-gl.css";
 
 const queryClient = new QueryClient();

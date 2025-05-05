@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -6,7 +7,7 @@ import UserContainer from '../components/UserContainer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, Star } from 'lucide-react';
+import { Search, Star, MapPin } from 'lucide-react';
 import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { DriverProfile, GeoPoint } from '../types';
@@ -231,15 +232,17 @@ const MapPage = () => {
         </div>
         
         {/* Map */}
-        <div className="mb-6">
-          <LeafletMap
-            center={userLocation}
-            zoom={13}
-            markers={mapMarkers}
-            onMapClick={handleLocationSelect}
-            userLocation={userLocation}
-            locationRadius={maxDistance * 1000} // Convert km to meters
-          />
+        <div className="mb-6 border border-gray-200 rounded-lg shadow-sm">
+          <div className="h-[400px]">
+            <LeafletMap
+              center={userLocation}
+              zoom={13}
+              markers={mapMarkers}
+              onMapClick={handleLocationSelect}
+              userLocation={userLocation}
+              locationRadius={maxDistance * 1000} // Convert km to meters
+            />
+          </div>
         </div>
       </div>
 
@@ -269,7 +272,7 @@ const MapPage = () => {
               return (
                 <Card 
                   key={driver.id} 
-                  className={`shadow-sm ${selectedDriverId === driver.id ? 'border-primary' : ''}`}
+                  className={`shadow-sm hover:shadow-md transition-shadow ${selectedDriverId === driver.id ? 'border-primary' : ''}`}
                 >
                   <CardContent className="p-4">
                     <div className="flex justify-between">
@@ -289,9 +292,12 @@ const MapPage = () => {
                         </div>
                         <div>
                           <h4 className="font-medium">{driver.name}</h4>
-                          <p className="text-sm text-gray-500">
-                            {driver.village} • {distance ? `${distance.toFixed(1)}km` : 'Distance unknown'}
-                          </p>
+                          <div className="flex items-center mt-1">
+                            <MapPin className="h-3 w-3 text-gray-500 mr-1" />
+                            <span className="text-xs text-gray-500">
+                              {driver.village} • {distance ? `${distance.toFixed(1)}km` : 'Distance unknown'}
+                            </span>
+                          </div>
                           <div className="flex items-center mt-1">
                             <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                             <span className="text-sm ml-1">
@@ -304,6 +310,7 @@ const MapPage = () => {
                         <Button 
                           size="sm" 
                           onClick={() => navigate(`/driver/profile/${driver.id}`)}
+                          className="bg-primary hover:bg-primary-600"
                         >
                           {t('map.viewProfile')}
                         </Button>
@@ -311,6 +318,7 @@ const MapPage = () => {
                           size="sm" 
                           variant="outline"
                           onClick={() => navigate(`/booking/new/${driver.id}`)}
+                          className="border-primary text-primary hover:bg-primary/10"
                         >
                           {t('map.book')}
                         </Button>
@@ -322,9 +330,25 @@ const MapPage = () => {
             })}
           </div>
         ) : (
-          <div className="text-center p-8 bg-muted rounded-lg">
-            <p>No drivers found within {maxDistance}km of your location. Try adjusting your search or location.</p>
-          </div>
+          <Card className="border-dashed border-2 border-gray-300">
+            <CardContent className="p-6 text-center">
+              <div className="flex justify-center mb-4">
+                <MapPin className="h-12 w-12 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium mb-2">No drivers found nearby</h3>
+              <p className="text-gray-500 mb-4">
+                There are no drivers available within {maxDistance}km of your location. 
+                Try adjusting your search distance or check back later.
+              </p>
+              <Button 
+                variant="outline" 
+                onClick={() => setMaxDistance(prev => Math.min(prev * 2, 100))}
+                className="mx-auto"
+              >
+                Increase Search Distance
+              </Button>
+            </CardContent>
+          </Card>
         )}
       </div>
     </UserContainer>

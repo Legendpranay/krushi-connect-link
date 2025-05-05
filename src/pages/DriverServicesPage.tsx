@@ -6,12 +6,13 @@ import { useLanguage } from '../contexts/LanguageContext';
 import UserContainer from '../components/UserContainer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
 import { Equipment } from '../types';
-import { Plus, X, Save, Edit } from 'lucide-react';
+import { Plus, X, Save, Edit, Tractor, AlertCircle } from 'lucide-react';
+import { Skeleton } from "@/components/ui/skeleton";
 
 const DriverServicesPage = () => {
   const { userProfile } = useAuth();
@@ -186,32 +187,65 @@ const DriverServicesPage = () => {
     }
   };
 
+  if (!userProfile) {
+    return (
+      <UserContainer>
+        <div className="p-4">
+          <Card>
+            <CardContent className="p-6 text-center">
+              <p>Please log in to manage your services</p>
+              <Button className="mt-4" onClick={() => navigate('/auth')}>
+                Log In
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </UserContainer>
+    );
+  }
+
   return (
     <UserContainer>
       <div className="p-4">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">{t('driver.myServices')}</h2>
           {!isAddingNew && !editingId && (
-            <Button onClick={handleAddNew}>
+            <Button onClick={handleAddNew} className="bg-primary hover:bg-primary-600">
               <Plus size={16} className="mr-2" /> Add Service
             </Button>
           )}
         </div>
         
         {isLoading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4">{t('common.loading')}</p>
+          <div className="space-y-4">
+            {[1, 2, 3].map(i => (
+              <Card key={i} className="shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <Skeleton className="h-5 w-40 mb-2" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                    <div className="space-x-2">
+                      <Skeleton className="h-9 w-9 rounded-md inline-block" />
+                      <Skeleton className="h-9 w-9 rounded-md inline-block" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         ) : (
           <div className="space-y-4">
             {/* Add/Edit Form */}
             {(isAddingNew || editingId) && (
               <Card className="border-primary border-2">
-                <CardContent className="p-4">
-                  <h3 className="font-medium text-lg mb-4">
+                <CardHeader className="bg-primary/5 pb-2">
+                  <CardTitle className="text-lg">
                     {isAddingNew ? 'Add New Service' : 'Edit Service'}
-                  </h3>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium mb-1">
@@ -250,11 +284,11 @@ const DriverServicesPage = () => {
                         onChange={handleChange}
                       />
                     </div>
-                    <div className="flex justify-end space-x-2">
+                    <div className="flex justify-end space-x-2 pt-2">
                       <Button variant="outline" onClick={handleCancelEdit}>
                         <X size={16} className="mr-2" /> Cancel
                       </Button>
-                      <Button onClick={handleSave}>
+                      <Button onClick={handleSave} className="bg-primary hover:bg-primary-600">
                         <Save size={16} className="mr-2" /> Save
                       </Button>
                     </div>
@@ -266,15 +300,20 @@ const DriverServicesPage = () => {
             {/* Service List */}
             {equipment.length > 0 ? (
               equipment.map(item => (
-                <Card key={item.id} className="shadow-sm">
+                <Card key={item.id} className="shadow-sm hover:shadow-md transition-all">
                   <CardContent className="p-4">
                     <div className="flex justify-between items-center">
-                      <div>
-                        <h4 className="font-medium">{item.name}</h4>
-                        <p className="text-sm">
-                          <span className="font-medium">₹{item.pricePerAcre}</span> per acre
-                          {item.pricePerHour ? ` • ₹${item.pricePerHour} per hour` : ''}
-                        </p>
+                      <div className="flex items-center">
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mr-3">
+                          <Tractor className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">{item.name}</h4>
+                          <p className="text-sm">
+                            <span className="font-medium">₹{item.pricePerAcre}</span> per acre
+                            {item.pricePerHour ? ` • ₹${item.pricePerHour} per hour` : ''}
+                          </p>
+                        </div>
                       </div>
                       <div className="space-x-2">
                         <Button 
@@ -282,6 +321,7 @@ const DriverServicesPage = () => {
                           variant="outline" 
                           onClick={() => handleEdit(item)}
                           disabled={!!editingId || isAddingNew}
+                          className="border-primary text-primary hover:bg-primary/10"
                         >
                           <Edit size={16} /> 
                         </Button>
@@ -299,16 +339,26 @@ const DriverServicesPage = () => {
                 </Card>
               ))
             ) : !isAddingNew ? (
-              <div className="text-center p-8 bg-muted rounded-lg">
-                <p>You haven't added any services yet.</p>
-                <Button 
-                  variant="outline" 
-                  onClick={handleAddNew} 
-                  className="mt-4"
-                >
-                  <Plus size={16} className="mr-2" /> Add your first service
-                </Button>
-              </div>
+              <Card className="border-dashed border-2 border-gray-200">
+                <CardContent className="p-8 text-center">
+                  <div className="flex justify-center mb-4">
+                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                      <AlertCircle className="h-8 w-8 text-primary" />
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-medium mb-2">No services found</h3>
+                  <p className="text-gray-500 mb-4">
+                    You haven't added any services yet. Add your first service to start getting bookings.
+                  </p>
+                  <Button 
+                    variant="default" 
+                    onClick={handleAddNew} 
+                    className="mt-2 bg-primary hover:bg-primary-600"
+                  >
+                    <Plus size={16} className="mr-2" /> Add your first service
+                  </Button>
+                </CardContent>
+              </Card>
             ) : null}
           </div>
         )}

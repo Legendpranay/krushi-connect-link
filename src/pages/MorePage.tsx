@@ -5,7 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import UserContainer from '../components/UserContainer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { HelpCircle, Info, Share2, Star, MessageSquare, ShieldCheck } from 'lucide-react';
+import { HelpCircle, Info, Share2, Star, MessageSquare, ShieldCheck, Settings } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 
 const MorePage = () => {
@@ -18,6 +18,14 @@ const MorePage = () => {
       title: t('profile.help'),
       description: 'Get help and support',
       onClick: () => navigate('/help'),
+      color: 'bg-blue-500'
+    },
+    {
+      icon: Settings,
+      title: 'Settings',
+      description: 'App preferences',
+      onClick: () => navigate('/settings'),
+      color: 'bg-gray-600'
     },
     {
       icon: Star,
@@ -28,6 +36,7 @@ const MorePage = () => {
           description: 'Thanks for your interest! In the full version, this would open your app store.'
         });
       },
+      color: 'bg-yellow-500'
     },
     {
       icon: Share2,
@@ -38,52 +47,61 @@ const MorePage = () => {
           description: 'Thanks for sharing! In the full version, this would open your sharing options.'
         });
       },
+      color: 'bg-green-600'
     },
     {
       icon: MessageSquare,
       title: 'Contact Us',
       description: 'Send us a message',
       onClick: () => navigate('/contact'),
+      color: 'bg-indigo-500'
     },
     {
       icon: ShieldCheck,
       title: 'Privacy Policy',
       description: 'Read our privacy policy',
       onClick: () => navigate('/privacy'),
+      color: 'bg-red-500'
     },
     {
       icon: Info,
       title: t('profile.about'),
       description: 'About KrushiLink',
       onClick: () => navigate('/about'),
+      color: 'bg-purple-500'
     },
   ];
 
   return (
     <UserContainer>
       <div className="p-4">
-        <h2 className="text-2xl font-bold mb-4">{t('bottomNav.more')}</h2>
+        <h2 className="text-2xl font-bold mb-6">{t('bottomNav.more')}</h2>
         
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {menuItems.map((item, index) => (
-            <Card key={index} className="shadow-sm">
-              <CardContent className="p-4">
+            <Card key={index} className="shadow-sm hover:shadow-md transition-all">
+              <CardContent className="p-0">
                 <Button
                   variant="ghost"
-                  className="w-full flex items-center justify-start p-2"
+                  className="w-full flex items-center justify-start p-4 h-auto"
                   onClick={item.onClick}
                 >
-                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center mr-3">
-                    <item.icon className="h-5 w-5" />
+                  <div className={`h-12 w-12 rounded-full ${item.color} text-white flex items-center justify-center mr-4`}>
+                    <item.icon className="h-6 w-6" />
                   </div>
                   <div className="text-left">
-                    <h3 className="font-medium">{item.title}</h3>
+                    <h3 className="font-medium text-lg">{item.title}</h3>
                     <p className="text-sm text-gray-500">{item.description}</p>
                   </div>
                 </Button>
               </CardContent>
             </Card>
           ))}
+        </div>
+        
+        <div className="mt-8 text-center">
+          <p className="text-sm text-gray-500">KrushiLink v1.0.0</p>
+          <p className="text-xs text-gray-400 mt-1">© 2025 KrushiLink Technologies</p>
         </div>
       </div>
     </UserContainer>

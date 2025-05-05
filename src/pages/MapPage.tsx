@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -107,7 +106,7 @@ const MapPage = () => {
     setFilteredDrivers(filtered);
   }, [searchQuery, drivers]);
 
-  const handleLocationSelect = async (location: { latitude: number; longitude: number; address: string }) => {
+  const handleLocationSelect = async (location: { latitude: number; longitude: number; address?: string }) => {
     setUserLocation({
       latitude: location.latitude,
       longitude: location.longitude
@@ -186,12 +185,13 @@ const MapPage = () => {
 
   // Prepare map markers
   const mapMarkers = driversWithinDistance.map(driver => ({
-    id: driver.id,
-    latitude: driver.location?.latitude || 0,
-    longitude: driver.location?.longitude || 0,
-    title: driver.name || 'Driver',
+    position: {
+      latitude: driver.location?.latitude || 0,
+      longitude: driver.location?.longitude || 0
+    },
+    popup: driver.name || 'Driver',
     onClick: () => setSelectedDriverId(driver.id)
-  })).filter(marker => marker.latitude && marker.longitude);
+  })).filter(marker => marker.position.latitude && marker.position.longitude);
 
   return (
     <UserContainer>
@@ -233,12 +233,12 @@ const MapPage = () => {
         {/* Map */}
         <div className="mb-6">
           <LeafletMap
-            initialLocation={userLocation}
-            onLocationSelect={handleLocationSelect}
-            showMarkers={false}
-            drivers={driversWithinDistance}
-            height="300px"
-            maxDistance={maxDistance}
+            center={userLocation}
+            zoom={13}
+            markers={mapMarkers}
+            onMapClick={handleLocationSelect}
+            userLocation={userLocation}
+            locationRadius={maxDistance * 1000} // Convert km to meters
           />
         </div>
       </div>

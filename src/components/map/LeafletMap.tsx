@@ -1,8 +1,9 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
 import { GeoPoint } from '@/types';
+import 'leaflet/dist/leaflet.css';
 
 // Fix Leaflet default icon issue
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -17,11 +18,13 @@ const DefaultIcon = L.icon({
   shadowSize: [41, 41]
 });
 
+// Set default icon for all markers
 L.Marker.prototype.options.icon = DefaultIcon;
 
 // Component to automatically update map view when center prop changes
 const ChangeMapView = ({ center, zoom }: { center: [number, number], zoom: number }) => {
   const map = useMap();
+  
   useEffect(() => {
     map.setView(center, zoom);
   }, [center, zoom, map]);
@@ -29,14 +32,16 @@ const ChangeMapView = ({ center, zoom }: { center: [number, number], zoom: numbe
   return null;
 };
 
+interface MarkerData {
+  position: GeoPoint;
+  popup?: string;
+  onClick?: () => void;
+}
+
 interface LeafletMapProps {
   center: GeoPoint;
   zoom?: number;
-  markers?: {
-    position: GeoPoint;
-    popup?: string;
-    onClick?: () => void;
-  }[];
+  markers?: MarkerData[];
   onMapClick?: (position: GeoPoint) => void;
   userLocation?: GeoPoint;
   locationRadius?: number;
@@ -51,9 +56,18 @@ const LeafletMap = ({
   locationRadius = 10000 // Default 10km in meters
 }: LeafletMapProps) => {
   const [mapLoaded, setMapLoaded] = useState(false);
+  const mapRef = useRef<L.Map | null>(null);
   
   // Convert GeoPoint to LatLng array format for react-leaflet
   const centerPosition: [number, number] = [center.latitude, center.longitude];
+
+  // Handle map click events
+  const handleMapClick = (e: L.LeafletMouseEvent) => {
+    if (onMapClick) {
+      const { lat, lng } = e.latlng;
+      onMapClick({ latitude: lat, longitude: lng });
+    }
+  };
 
   return (
     <div className="w-full h-full min-h-[300px] rounded-lg overflow-hidden">
@@ -61,11 +75,13 @@ const LeafletMap = ({
         center={centerPosition}
         zoom={zoom}
         style={{ height: '100%', width: '100%' }}
-        whenReady={() => setMapLoaded(true)}
-        onClick={(e: any) => {
+        whenReady={(map) => {
+          mapRef.current = map.target;
+          setMapLoaded(true);
+          
+          // Add click handler to map
           if (onMapClick) {
-            const { lat, lng } = e.latlng;
-            onMapClick({ latitude: lat, longitude: lng });
+            map.target.on('click', handleMapClick);
           }
         }}
       >

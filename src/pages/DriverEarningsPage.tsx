@@ -8,6 +8,7 @@ import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { Booking } from '../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const DriverEarningsPage = () => {
   const { userProfile } = useAuth();
@@ -15,41 +16,6 @@ const DriverEarningsPage = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Calculate earnings stats
-  const totalEarnings = bookings
-    .filter(booking => booking.status === 'completed' || booking.status === 'awaiting_payment')
-    .reduce((sum, booking) => sum + booking.totalPrice, 0);
-  
-  const paidEarnings = bookings
-    .filter(booking => booking.status === 'completed' && booking.paymentStatus === 'paid')
-    .reduce((sum, booking) => sum + booking.totalPrice, 0);
-  
-  const pendingEarnings = bookings
-    .filter(booking => booking.paymentStatus === 'pending')
-    .reduce((sum, booking) => sum + booking.totalPrice, 0);
-  
-  // Get last 30 days of earnings for chart
-  const last30Days = Array.from({ length: 30 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    return date.toISOString().split('T')[0];
-  }).reverse();
-  
-  const earningsData = last30Days.map(date => {
-    const dayEarnings = bookings
-      .filter(booking => {
-        const bookingDate = new Date(booking.completedTime || booking.requestedTime);
-        return bookingDate.toISOString().split('T')[0] === date && 
-               (booking.status === 'completed' || booking.status === 'awaiting_payment');
-      })
-      .reduce((sum, booking) => sum + booking.totalPrice, 0);
-    
-    return {
-      date: date.split('-').slice(1).join('/'), // Format as MM/DD
-      earnings: dayEarnings
-    };
-  });
-
   // Fetch driver's bookings
   useEffect(() => {
     const fetchBookings = async () => {
@@ -70,12 +36,12 @@ const DriverEarningsPage = () => {
           bookingsList.push({
             id: doc.id,
             ...data,
-            requestedTime: data.requestedTime.toDate(),
-            scheduledTime: data.scheduledTime?.toDate(),
-            completedTime: data.completedTime?.toDate(),
-            createdAt: data.createdAt.toDate(),
-            updatedAt: data.updatedAt.toDate(),
-            paymentDueDate: data.paymentDueDate?.toDate()
+            requestedTime: data.requestedTime?.toDate?.() || new Date(data.requestedTime),
+            scheduledTime: data.scheduledTime?.toDate?.() || (data.scheduledTime ? new Date(data.scheduledTime) : undefined),
+            completedTime: data.completedTime?.toDate?.() || (data.completedTime ? new Date(data.completedTime) : undefined),
+            createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt),
+            updatedAt: data.updatedAt?.toDate?.() || new Date(data.updatedAt),
+            paymentDueDate: data.paymentDueDate?.toDate?.() || (data.paymentDueDate ? new Date(data.paymentDueDate) : undefined)
           } as Booking);
         });
         
@@ -87,13 +53,74 @@ const DriverEarningsPage = () => {
       }
     };
     
-    fetchBookings();
+    if (userProfile?.id) {
+      fetchBookings();
+    }
   }, [userProfile]);
+
+  // Calculate earnings stats
+  const totalEarnings = bookings
+    .filter(booking => booking.status === 'completed' || booking.status === 'awaiting_payment')
+    .reduce((sum, booking) => sum + (booking.totalPrice || 0), 0);
+  
+  const paidEarnings = bookings
+    .filter(booking => booking.status === 'completed' && booking.paymentStatus === 'paid')
+    .reduce((sum, booking) => sum + (booking.totalPrice || 0), 0);
+  
+  const pendingEarnings = bookings
+    .filter(booking => booking.paymentStatus === 'pending')
+    .reduce((sum, booking) => sum + (booking.totalPrice || 0), 0);
+  
+  // Get last 30 days of earnings for chart
+  const last30Days = Array.from({ length: 30 }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    return date.toISOString().split('T')[0];
+  }).reverse();
+  
+  const earningsData = last30Days.map(date => {
+    const dayEarnings = bookings
+      .filter(booking => {
+        const bookingDate = new Date(booking.completedTime || booking.requestedTime);
+        return bookingDate.toISOString().split('T')[0] === date && 
+               (booking.status === 'completed' || booking.status === 'awaiting_payment');
+      })
+      .reduce((sum, booking) => sum + (booking.totalPrice || 0), 0);
+    
+    return {
+      date: date.split('-').slice(1).join('/'), // Format as MM/DD
+      earnings: dayEarnings
+    };
+  });
 
   // Group bookings by payment status
   const completedBookings = bookings.filter(booking => booking.status === 'completed');
   const pendingPaymentBookings = bookings.filter(booking => 
-    booking.status === 'completed' || booking.status === 'awaiting_payment' && booking.paymentStatus === 'pending'
+    (booking.status === 'completed' || booking.status === 'awaiting_payment') && booking.paymentStatus === 'pending'
+  );
+
+  // Loading skeleton for earnings summary
+  const renderEarningsSummarySkeleton = () => (
+    <div className="grid grid-cols-3 gap-4 mb-6">
+      {[1, 2, 3].map((item) => (
+        <Card key={item}>
+          <CardContent className="p-4">
+            <Skeleton className="h-4 w-20 mb-2" />
+            <Skeleton className="h-8 w-16" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+
+  // Loading skeleton for chart
+  const renderChartSkeleton = () => (
+    <Card className="mb-6">
+      <CardContent className="p-4">
+        <Skeleton className="h-6 w-40 mb-4" />
+        <Skeleton className="h-[300px] w-full" />
+      </CardContent>
+    </Card>
   );
 
   return (
@@ -102,10 +129,29 @@ const DriverEarningsPage = () => {
         <h2 className="text-2xl font-bold mb-6">{t('driver.earnings')}</h2>
         
         {isLoading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4">{t('common.loading')}</p>
-          </div>
+          <>
+            {renderEarningsSummarySkeleton()}
+            {renderChartSkeleton()}
+            <Skeleton className="h-6 w-40 mb-4" />
+            <div className="space-y-3">
+              {[1, 2, 3].map((item) => (
+                <Card key={item} className="shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between">
+                      <div>
+                        <Skeleton className="h-5 w-24 mb-2" />
+                        <Skeleton className="h-4 w-32" />
+                      </div>
+                      <div>
+                        <Skeleton className="h-5 w-16 mb-2" />
+                        <Skeleton className="h-4 w-20" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </>
         ) : (
           <>
             {/* Earnings Summary */}

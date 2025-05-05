@@ -32,6 +32,28 @@ const ChangeMapView = ({ center, zoom }: { center: [number, number], zoom: numbe
   return null;
 };
 
+// Component to handle map clicks
+const MapClickHandler = ({ onMapClick }: { onMapClick?: (position: GeoPoint) => void }) => {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (!onMapClick) return;
+    
+    const handleClick = (e: L.LeafletMouseEvent) => {
+      const { lat, lng } = e.latlng;
+      onMapClick({ latitude: lat, longitude: lng });
+    };
+    
+    map.on('click', handleClick);
+    
+    return () => {
+      map.off('click', handleClick);
+    };
+  }, [map, onMapClick]);
+  
+  return null;
+};
+
 interface MarkerData {
   position: GeoPoint;
   popup?: string;
@@ -61,14 +83,6 @@ const LeafletMap = ({
   // Convert GeoPoint to LatLng array format for react-leaflet
   const centerPosition: [number, number] = [center.latitude, center.longitude];
 
-  // Handle map click events
-  const handleMapClick = (e: L.LeafletMouseEvent) => {
-    if (onMapClick) {
-      const { lat, lng } = e.latlng;
-      onMapClick({ latitude: lat, longitude: lng });
-    }
-  };
-
   return (
     <div className="w-full h-full min-h-[300px] rounded-lg overflow-hidden">
       <MapContainer
@@ -78,7 +92,6 @@ const LeafletMap = ({
         whenReady={() => {
           setMapLoaded(true);
         }}
-        onClick={handleMapClick}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -87,6 +100,9 @@ const LeafletMap = ({
         
         {/* Update view when center changes */}
         <ChangeMapView center={centerPosition} zoom={zoom} />
+        
+        {/* Add click handler */}
+        {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
         
         {/* Show user location with radius */}
         {userLocation && (

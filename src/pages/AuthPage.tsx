@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -31,10 +32,12 @@ const AuthPage = () => {
   if (verificationId) {
     return (
       <UserContainer hideBottomNav>
-        <OtpVerificationForm 
-          verificationId={verificationId}
-          onBackToPhone={() => setVerificationId(null)}
-        />
+        <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col justify-center">
+          <OtpVerificationForm 
+            verificationId={verificationId}
+            onBackToPhone={() => setVerificationId(null)}
+          />
+        </div>
       </UserContainer>
     );
   }
@@ -42,9 +45,11 @@ const AuthPage = () => {
   // Otherwise, show phone login form
   return (
     <UserContainer hideBottomNav>
-      <PhoneLoginForm
-        onSuccess={(verId) => setVerificationId(verId)}
-      />
+      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col justify-center">
+        <PhoneLoginForm
+          onSuccess={(verId) => setVerificationId(verId)}
+        />
+      </div>
     </UserContainer>
   );
 };

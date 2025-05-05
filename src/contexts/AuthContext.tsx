@@ -7,11 +7,15 @@ import {
   RecaptchaVerifier,
   signOut,
   signInWithCredential,
-  User as FirebaseUser
+  User as FirebaseUser,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword,
+  updateProfile
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { UserProfile, UserRole } from '../types';
+import { toast } from '@/components/ui/use-toast';
 
 // Auth context type
 interface AuthContextType {
@@ -23,6 +27,8 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
   recaptchaVerifier: React.MutableRefObject<RecaptchaVerifier | null>;
+  signInWithEmailPassword?: (email: string, password: string) => Promise<any>;
+  registerWithEmailPassword?: (email: string, password: string, name: string) => Promise<any>;
 }
 
 // Create the auth context
@@ -56,6 +62,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
           const newUserProfile: UserProfile = {
             id: user.uid,
             phone: user.phoneNumber || '',
+            email: user.email || '',
+            name: user.displayName || '',
             role: null, // User will select role during onboarding
             isProfileComplete: false,
             createdAt: new Date(),
@@ -125,6 +133,57 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  // Sign in with email and password
+  const signInWithEmailPassword = async (email: string, password: string) => {
+    try {
+      const userCredential = await firebaseSignInWithEmailAndPassword(auth, email, password);
+      return { success: true, user: userCredential.user };
+    } catch (error) {
+      console.error("Error signing in with email:", error);
+      toast({
+        title: "Login Failed",
+        description: "Invalid email or password. Please try again.",
+        variant: "destructive"
+      });
+      return { success: false, error };
+    }
+  };
+
+  // Register with email and password
+  const registerWithEmailPassword = async (email: string, password: string, name: string) => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Update profile with name
+      await updateProfile(userCredential.user, {
+        displayName: name
+      });
+      
+      // Create user profile in Firestore
+      const newUserProfile: UserProfile = {
+        id: userCredential.user.uid,
+        email,
+        name,
+        phone: '',
+        role: null,
+        isProfileComplete: false,
+        createdAt: new Date(),
+      };
+      
+      await setDoc(doc(db, 'users', userCredential.user.uid), newUserProfile);
+      
+      return { success: true, user: userCredential.user };
+    } catch (error) {
+      console.error("Error registering with email:", error);
+      toast({
+        title: "Registration Failed",
+        description: "Could not create account. Email might already be in use.",
+        variant: "destructive"
+      });
+      return { success: false, error };
+    }
+  };
+
   // Log out
   const logout = async () => {
     await signOut(auth);
@@ -154,6 +213,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     logout,
     updateUserProfile,
     recaptchaVerifier: recaptchaVerifierRef,
+    signInWithEmailPassword,
+    registerWithEmailPassword
   };
 
   return (

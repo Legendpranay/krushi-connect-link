@@ -6,6 +6,7 @@ export type Language = 'en' | 'hi' | 'mr';
 export interface UserProfile {
   id: string;
   phone: string;
+  email?: string;
   name?: string;
   role: UserRole | null;
   village?: string;

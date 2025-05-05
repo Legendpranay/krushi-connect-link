@@ -6,6 +6,7 @@ import UserContainer from '../components/UserContainer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { HelpCircle, Info, Share2, Star, MessageSquare, ShieldCheck } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 const MorePage = () => {
   const { t } = useLanguage();
@@ -22,13 +23,21 @@ const MorePage = () => {
       icon: Star,
       title: 'Rate the App',
       description: 'Share your feedback',
-      onClick: () => {/* Would open app store or feedback form */},
+      onClick: () => {
+        toast({
+          description: 'Thanks for your interest! In the full version, this would open your app store.'
+        });
+      },
     },
     {
       icon: Share2,
       title: 'Share KrushiLink',
       description: 'Invite friends and family',
-      onClick: () => {/* Would open share dialog */},
+      onClick: () => {
+        toast({
+          description: 'Thanks for sharing! In the full version, this would open your sharing options.'
+        });
+      },
     },
     {
       icon: MessageSquare,
@@ -52,7 +61,7 @@ const MorePage = () => {
 
   return (
     <UserContainer>
-      <div>
+      <div className="p-4">
         <h2 className="text-2xl font-bold mb-4">{t('bottomNav.more')}</h2>
         
         <div className="space-y-4">

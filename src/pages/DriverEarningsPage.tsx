@@ -55,10 +55,12 @@ const DriverEarningsPage = () => {
     
     if (userProfile?.id) {
       fetchBookings();
+    } else {
+      setIsLoading(false); // Make sure we stop loading even if no user profile
     }
   }, [userProfile]);
 
-  // Calculate earnings stats
+  // Calculate earnings stats - always default to 0
   const totalEarnings = bookings
     .filter(booking => booking.status === 'completed' || booking.status === 'awaiting_payment')
     .reduce((sum, booking) => sum + (booking.totalPrice || 0), 0);
@@ -180,24 +182,30 @@ const DriverEarningsPage = () => {
             <Card className="mb-6">
               <CardContent className="p-4">
                 <h3 className="font-medium mb-4">Earnings (Last 30 Days)</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={earningsData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip 
-                      formatter={(value) => [`₹${value}`, 'Earnings']}
-                      labelFormatter={(label) => `Date: ${label}`}
-                    />
-                    <Legend />
-                    <Bar dataKey="earnings" name="Earnings (₹)" fill="#6366F1" />
-                  </BarChart>
-                </ResponsiveContainer>
+                {earningsData.some(item => item.earnings > 0) ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={earningsData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip 
+                        formatter={(value) => [`₹${value}`, 'Earnings']}
+                        labelFormatter={(label) => `Date: ${label}`}
+                      />
+                      <Legend />
+                      <Bar dataKey="earnings" name="Earnings (₹)" fill="#6366F1" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-[300px] flex items-center justify-center bg-muted/20 rounded-md">
+                    <p className="text-muted-foreground">No earnings data available for this period</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
             
             {/* Pending Payments */}
-            {pendingPaymentBookings.length > 0 && (
+            {pendingPaymentBookings.length > 0 ? (
               <div className="mb-6">
                 <h3 className="font-medium text-lg mb-4">Pending Payments</h3>
                 <div className="space-y-3">
@@ -219,6 +227,13 @@ const DriverEarningsPage = () => {
                       </CardContent>
                     </Card>
                   ))}
+                </div>
+              </div>
+            ) : (
+              <div className="mb-6">
+                <h3 className="font-medium text-lg mb-4">Pending Payments</h3>
+                <div className="text-center p-6 bg-muted/20 rounded-lg">
+                  <p className="text-muted-foreground">No pending payments</p>
                 </div>
               </div>
             )}
@@ -251,8 +266,11 @@ const DriverEarningsPage = () => {
                 </div>
               </div>
             ) : (
-              <div className="text-center p-8 bg-muted rounded-lg">
-                <p>You haven't completed any jobs yet.</p>
+              <div>
+                <h3 className="font-medium text-lg mb-4">Completed Jobs</h3>
+                <div className="text-center p-6 bg-muted/20 rounded-lg">
+                  <p className="text-muted-foreground">You haven't completed any jobs yet</p>
+                </div>
               </div>
             )}
           </>

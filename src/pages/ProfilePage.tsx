@@ -37,7 +37,7 @@ const ProfilePage = () => {
 
   return (
     <UserContainer>
-      <div className="mb-6">
+      <div className="p-4">
         <h2 className="text-2xl font-bold mb-4">{t('profile.myProfile')}</h2>
         
         {/* Profile Card */}
@@ -61,7 +61,7 @@ const ProfilePage = () => {
               </div>
               
               <div>
-                <h3 className="text-xl font-medium">{userProfile?.name}</h3>
+                <h3 className="text-xl font-medium">{userProfile?.name || 'User'}</h3>
                 <p className="text-sm text-gray-500">{userProfile?.phone}</p>
                 <div className="flex items-center mt-1">
                   <span className="text-xs px-2 py-0.5 bg-primary-100 text-primary-700 rounded-full">

@@ -75,15 +75,10 @@ const LeafletMap = ({
         center={centerPosition}
         zoom={zoom}
         style={{ height: '100%', width: '100%' }}
-        whenReady={(map) => {
-          mapRef.current = map.target;
+        whenReady={() => {
           setMapLoaded(true);
-          
-          // Add click handler to map
-          if (onMapClick) {
-            map.target.on('click', handleMapClick);
-          }
         }}
+        onClick={handleMapClick}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

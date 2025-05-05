@@ -10,6 +10,32 @@ import { Map, Calendar, User, Settings } from 'lucide-react';
 import { collection, query, where, limit, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { DriverProfile, Booking } from '../types';
+import { 
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+} from "@/components/ui/carousel";
+
+// Sample carousel images
+const carouselImages = [
+  {
+    src: "https://images.unsplash.com/photo-1605000797499-95a51c5269ae?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1471&q=80",
+    alt: "Tractor working in field",
+    title: "Connect with equipment drivers"
+  },
+  {
+    src: "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
+    alt: "Farm harvest",
+    title: "Book equipment for your farm"
+  },
+  {
+    src: "https://images.unsplash.com/photo-1530267981375-f0de937f5f13?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
+    alt: "Rural landscape",
+    title: "Grow your agricultural business"
+  }
+];
 
 const HomePage = () => {
   const { userProfile } = useAuth();
@@ -72,17 +98,50 @@ const HomePage = () => {
     fetchData();
   }, [userProfile]);
 
+  // Render image carousel for both farmer and driver
+  const renderCarousel = () => (
+    <div className="mb-6">
+      <Carousel className="w-full">
+        <CarouselContent>
+          {carouselImages.map((image, index) => (
+            <CarouselItem key={index}>
+              <div className="relative rounded-lg overflow-hidden aspect-[16/9]">
+                <img
+                  src={image.src}
+                  alt={image.alt}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/placeholder.svg';
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end">
+                  <div className="p-4 text-white">
+                    <h3 className="text-xl font-bold">{image.title}</h3>
+                  </div>
+                </div>
+              </div>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+        <CarouselPrevious className="left-2" />
+        <CarouselNext className="right-2" />
+      </Carousel>
+    </div>
+  );
+
   // Render different home page based on user role
   const renderFarmerHome = () => (
     <>
+      {renderCarousel()}
+      
       <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-4">{t('home.welcome')}, {userProfile?.name}</h2>
+        <h2 className="text-2xl font-bold mb-4">{t('home.welcome')}, {userProfile?.name || 'Farmer'}</h2>
         
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           <Button 
             onClick={() => navigate('/booking')}
-            className="h-24 flex flex-col items-center justify-center"
+            className="h-24 flex flex-col items-center justify-center bg-gradient-to-br from-green-500 to-green-600"
           >
             <Calendar className="w-8 h-8 mb-2" />
             {t('home.bookNow')}
@@ -91,7 +150,7 @@ const HomePage = () => {
           <Button 
             onClick={() => navigate('/map')}
             variant="outline"
-            className="h-24 flex flex-col items-center justify-center"
+            className="h-24 flex flex-col items-center justify-center border-2 border-green-500 text-green-700"
           >
             <Map className="w-8 h-8 mb-2" />
             {t('map.nearbyDrivers')}
@@ -111,10 +170,10 @@ const HomePage = () => {
         {nearbyDrivers.length > 0 ? (
           <div className="space-y-4">
             {nearbyDrivers.map(driver => (
-              <Card key={driver.id} className="shadow-sm">
+              <Card key={driver.id} className="shadow-sm hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
                   <div className="flex items-center">
-                    <div className="h-12 w-12 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden mr-4">
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-green-100 to-green-200 flex-shrink-0 overflow-hidden mr-4">
                       {driver.profileImage ? (
                         <img 
                           src={driver.profileImage} 
@@ -122,14 +181,14 @@ const HomePage = () => {
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <div className="h-full w-full flex items-center justify-center text-gray-500">
+                        <div className="h-full w-full flex items-center justify-center text-green-500">
                           <User size={24} />
                         </div>
                       )}
                     </div>
                     <div className="flex-grow">
-                      <h4 className="font-medium">{driver.name}</h4>
-                      <p className="text-sm text-gray-500">{driver.village}</p>
+                      <h4 className="font-medium">{driver.name || 'Driver'}</h4>
+                      <p className="text-sm text-gray-500">{driver.village || 'Local Area'}</p>
                     </div>
                     <Button size="sm" onClick={() => navigate(`/driver/${driver.id}`)}>
                       {t('map.book')}
@@ -152,14 +211,16 @@ const HomePage = () => {
 
   const renderDriverHome = () => (
     <>
+      {renderCarousel()}
+      
       <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-4">{t('home.welcome')}, {userProfile?.name}</h2>
+        <h2 className="text-2xl font-bold mb-4">{t('home.welcome')}, {userProfile?.name || 'Driver'}</h2>
         
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           <Button 
             onClick={() => navigate('/driver-status')}
-            className="h-24 flex flex-col items-center justify-center"
+            className="h-24 flex flex-col items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600"
           >
             <Calendar className="w-8 h-8 mb-2" />
             {t('driver.goOnline')}
@@ -168,7 +229,7 @@ const HomePage = () => {
           <Button 
             onClick={() => navigate('/driver-earnings')}
             variant="outline"
-            className="h-24 flex flex-col items-center justify-center"
+            className="h-24 flex flex-col items-center justify-center border-2 border-blue-500 text-blue-700"
           >
             <Settings className="w-8 h-8 mb-2" />
             {t('driver.earnings')}
@@ -185,19 +246,19 @@ const HomePage = () => {
           </Button>
         </div>
 
-        <Card className="shadow-sm mb-6">
+        <Card className="shadow-sm mb-6 hover:shadow-md transition-shadow">
           <CardContent className="p-4">
             <ul className="divide-y">
               {/* Sample equipment - in a real app, this would come from the user profile */}
-              <li className="py-2 flex justify-between">
+              <li className="py-3 flex justify-between">
                 <span>Plowing</span>
                 <span className="font-medium">₹700/acre</span>
               </li>
-              <li className="py-2 flex justify-between">
+              <li className="py-3 flex justify-between">
                 <span>Sowing</span>
                 <span className="font-medium">₹500/acre</span>
               </li>
-              <li className="py-2 flex justify-between">
+              <li className="py-3 flex justify-between">
                 <span>Transport</span>
                 <span className="font-medium">₹600/hour</span>
               </li>
@@ -221,7 +282,7 @@ const HomePage = () => {
       {recentBookings.length > 0 ? (
         <div className="space-y-4">
           {recentBookings.map(booking => (
-            <Card key={booking.id} className="shadow-sm">
+            <Card key={booking.id} className="shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="p-4">
                 <div className="flex justify-between items-center">
                   <div>
@@ -230,7 +291,7 @@ const HomePage = () => {
                       {new Date(booking.requestedTime.toString()).toLocaleDateString()} • {booking.acreage} acres
                     </p>
                   </div>
-                  <div className={`px-2 py-1 text-xs rounded-full ${
+                  <div className={`px-3 py-1 text-xs rounded-full font-medium ${
                     booking.status === 'completed' ? 'bg-green-100 text-green-800' :
                     booking.status === 'awaiting_payment' ? 'bg-yellow-100 text-yellow-800' :
                     booking.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
@@ -261,7 +322,7 @@ const HomePage = () => {
         <h3 className="text-lg font-semibold">{t('home.announcements')}</h3>
       </div>
 
-      <Card className="bg-accent/10 border-accent">
+      <Card className="bg-accent/10 border-accent hover:shadow-md transition-shadow">
         <CardContent className="p-4">
           <h4 className="font-semibold mb-2">Welcome to KrushiLink!</h4>
           <p className="text-sm">
@@ -274,9 +335,11 @@ const HomePage = () => {
 
   return (
     <UserContainer>
-      {userProfile?.role === 'farmer' ? renderFarmerHome() : renderDriverHome()}
-      {renderRecentBookings()}
-      {renderAnnouncements()}
+      <div className="p-4">
+        {userProfile?.role === 'farmer' ? renderFarmerHome() : renderDriverHome()}
+        {renderRecentBookings()}
+        {renderAnnouncements()}
+      </div>
     </UserContainer>
   );
 };

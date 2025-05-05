@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
@@ -46,23 +45,6 @@ const OtpVerificationForm = ({ verificationId, onBackToPhone }: OtpVerificationF
     setIsLoading(true);
     
     try {
-      // For demo purposes in this project, let's accept any OTP as valid
-      if (verificationId.startsWith('mock-')) {
-        toast({
-          title: 'Demo Mode',
-          description: 'Login successful in demo mode!',
-        });
-        
-        // Wait a moment to simulate processing
-        setTimeout(() => {
-          setIsLoading(false);
-          // In a real app, confirmOtp would be called here
-        }, 1500);
-        
-        return;
-      }
-      
-      // This would be used in a production environment:
       const result = await confirmOtp(verificationId, otp);
       
       if (result.success) {
@@ -70,7 +52,7 @@ const OtpVerificationForm = ({ verificationId, onBackToPhone }: OtpVerificationF
           title: 'Success',
           description: 'Login successful!',
         });
-        // Auth context will handle user state
+        // Auth context will handle user state and redirection
       } else {
         toast({
           title: 'Error',
@@ -183,10 +165,6 @@ const OtpVerificationForm = ({ verificationId, onBackToPhone }: OtpVerificationF
           </form>
         </CardContent>
       </Card>
-      
-      <div className="mt-6 text-center text-sm text-muted-foreground">
-        <p>For demo purposes, any 6-digit code will work</p>
-      </div>
     </div>
   );
 };

@@ -1,31 +1,47 @@
 
-import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import PhoneLoginForm from '../components/PhoneLoginForm';
 import OtpVerificationForm from '../components/OtpVerificationForm';
 import UserContainer from '../components/UserContainer';
 
 const AuthPage = () => {
-  const { currentUser, userProfile } = useAuth();
+  const { currentUser, userProfile, isLoading } = useAuth();
   const [verificationId, setVerificationId] = useState<string | null>(null);
+  const navigate = useNavigate();
 
-  // If user is logged in and profile is complete, redirect to home
-  if (currentUser && userProfile?.isProfileComplete) {
-    return <Navigate to="/" />;
+  // Effect to handle redirection after auth state changes
+  useEffect(() => {
+    if (isLoading) return;
+    
+    if (currentUser) {
+      if (userProfile?.isProfileComplete) {
+        navigate("/");
+      } else if (!userProfile?.role) {
+        navigate("/select-role");
+      } else if (userProfile?.role === 'farmer') {
+        navigate("/complete-farmer-profile");
+      } else if (userProfile?.role === 'driver') {
+        navigate("/complete-driver-profile");
+      }
+    }
+  }, [currentUser, userProfile, isLoading, navigate]);
+
+  // Show loading while checking auth status
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col justify-center items-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <p className="mt-4">Loading...</p>
+      </div>
+    );
   }
 
-  // If user is logged in but needs to select role or complete profile
-  if (currentUser && !userProfile?.role) {
-    return <Navigate to="/select-role" />;
-  }
-  
-  if (currentUser && !userProfile?.isProfileComplete && userProfile?.role === 'farmer') {
-    return <Navigate to="/complete-farmer-profile" />;
-  }
-  
-  if (currentUser && !userProfile?.isProfileComplete && userProfile?.role === 'driver') {
-    return <Navigate to="/complete-driver-profile" />;
+  // If user is already logged in, don't render the auth page
+  if (currentUser) {
+    // Redirection is handled by the useEffect hook
+    return null;
   }
 
   // Show OTP verification form if verificationId is set

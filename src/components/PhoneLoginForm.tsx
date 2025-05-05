@@ -35,28 +35,7 @@ const PhoneLoginForm = ({ onSuccess }: { onSuccess: (verificationId: string) => 
     setIsLoading(true);
     
     try {
-      // For demo purposes, use a mock verification since Firebase billing is not enabled
-      toast({
-        title: 'Demo Mode',
-        description: 'Since this is a demo, we will bypass actual OTP. In a production app, you would receive an SMS.',
-      });
-      
-      // Generate a mock verification ID
-      const mockVerificationId = `mock-${Math.random().toString(36).substring(2, 15)}`;
-      
-      // Wait a moment to simulate server processing
-      setTimeout(() => {
-        onSuccess(mockVerificationId);
-        setIsLoading(false);
-      }, 1500);
-      
-      // The actual Firebase code would be used in a production environment:
-      /*
-      const formattedPhone = phoneNumber.startsWith('+') 
-        ? phoneNumber 
-        : `+91${phoneNumber}`;
-      
-      const result = await signInWithPhone(formattedPhone);
+      const result = await signInWithPhone(phoneNumber);
       
       if (result.success) {
         onSuccess(result.verificationId);
@@ -67,7 +46,6 @@ const PhoneLoginForm = ({ onSuccess }: { onSuccess: (verificationId: string) => 
           variant: 'destructive',
         });
       }
-      */
     } catch (error) {
       console.error(error);
       toast({
@@ -75,6 +53,7 @@ const PhoneLoginForm = ({ onSuccess }: { onSuccess: (verificationId: string) => 
         description: 'An unexpected error occurred. Please try again.',
         variant: 'destructive',
       });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -94,26 +73,14 @@ const PhoneLoginForm = ({ onSuccess }: { onSuccess: (verificationId: string) => 
     setIsLoading(true);
     
     try {
-      // For demo purposes, simulate login success
-      toast({
-        title: 'Demo Mode',
-        description: 'Login successful in demo mode. In a production app, this would verify credentials.',
-      });
-      
-      // Simulate successful login
-      setTimeout(() => {
-        if (signInWithEmailPassword) {
-          signInWithEmailPassword(email, password);
-        }
-        setIsLoading(false);
-      }, 1500);
+      const result = await signInWithEmailPassword(email, password);
+      if (!result.success) {
+        throw new Error("Login failed");
+      }
     } catch (error) {
       console.error(error);
-      toast({
-        title: 'Error',
-        description: 'Failed to login. Please check your credentials and try again.',
-        variant: 'destructive',
-      });
+      // Toast is already shown in the auth context
+    } finally {
       setIsLoading(false);
     }
   };
@@ -142,26 +109,14 @@ const PhoneLoginForm = ({ onSuccess }: { onSuccess: (verificationId: string) => 
     setIsLoading(true);
     
     try {
-      // For demo purposes, simulate registration success
-      toast({
-        title: 'Demo Mode',
-        description: 'Registration successful in demo mode. In a production app, this would create a new account.',
-      });
-      
-      // Simulate successful registration
-      setTimeout(() => {
-        if (registerWithEmailPassword) {
-          registerWithEmailPassword(email, password, name);
-        }
-        setIsLoading(false);
-      }, 1500);
+      const result = await registerWithEmailPassword(email, password, name);
+      if (!result.success) {
+        throw new Error("Registration failed");
+      }
     } catch (error) {
       console.error(error);
-      toast({
-        title: 'Error',
-        description: 'Failed to register. Please try again.',
-        variant: 'destructive',
-      });
+      // Toast is already shown in the auth context
+    } finally {
       setIsLoading(false);
     }
   };
@@ -290,7 +245,15 @@ const PhoneLoginForm = ({ onSuccess }: { onSuccess: (verificationId: string) => 
                   className="w-full bg-primary hover:bg-primary-600" 
                   disabled={isLoading}
                 >
-                  {isLoading ? t('common.loading') : 'Login'}
+                  {isLoading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      {t('common.loading')}
+                    </>
+                  ) : 'Login'}
                 </Button>
               </form>
             </TabsContent>
@@ -374,7 +337,15 @@ const PhoneLoginForm = ({ onSuccess }: { onSuccess: (verificationId: string) => 
                   className="w-full bg-primary hover:bg-primary-600" 
                   disabled={isLoading}
                 >
-                  {isLoading ? t('common.loading') : 'Register'}
+                  {isLoading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      {t('common.loading')}
+                    </>
+                  ) : 'Register'}
                 </Button>
               </form>
             </TabsContent>

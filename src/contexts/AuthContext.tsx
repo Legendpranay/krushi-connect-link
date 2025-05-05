@@ -27,8 +27,8 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
   recaptchaVerifier: React.MutableRefObject<RecaptchaVerifier | null>;
-  signInWithEmailPassword?: (email: string, password: string) => Promise<any>;
-  registerWithEmailPassword?: (email: string, password: string, name: string) => Promise<any>;
+  signInWithEmailPassword: (email: string, password: string) => Promise<any>;
+  registerWithEmailPassword: (email: string, password: string, name: string) => Promise<any>;
 }
 
 // Create the auth context
@@ -52,25 +52,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setCurrentUser(user);
       
       if (user) {
-        // Fetch user profile from Firestore
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        
-        if (userDoc.exists()) {
-          setUserProfile(userDoc.data() as UserProfile);
-        } else {
-          // Create a bare-bones user profile if it doesn't exist yet
-          const newUserProfile: UserProfile = {
-            id: user.uid,
-            phone: user.phoneNumber || '',
-            email: user.email || '',
-            name: user.displayName || '',
-            role: null, // User will select role during onboarding
-            isProfileComplete: false,
-            createdAt: new Date(),
-          };
+        try {
+          // Fetch user profile from Firestore
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
           
-          await setDoc(doc(db, 'users', user.uid), newUserProfile);
-          setUserProfile(newUserProfile);
+          if (userDoc.exists()) {
+            setUserProfile(userDoc.data() as UserProfile);
+          } else {
+            // Create a bare-bones user profile if it doesn't exist yet
+            const newUserProfile: UserProfile = {
+              id: user.uid,
+              phone: user.phoneNumber || '',
+              email: user.email || '',
+              name: user.displayName || '',
+              role: null, // User will select role during onboarding
+              isProfileComplete: false,
+              createdAt: new Date(),
+            };
+            
+            await setDoc(doc(db, 'users', user.uid), newUserProfile);
+            setUserProfile(newUserProfile);
+          }
+        } catch (error) {
+          console.error("Error fetching/creating user profile:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load user profile. Please try again later.",
+            variant: "destructive",
+          });
         }
       } else {
         setUserProfile(null);
@@ -85,15 +94,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Sign in with phone number
   const signInWithPhone = async (phoneNumber: string) => {
     try {
-      // Create a new RecaptchaVerifier if we don't have one
-      if (!recaptchaVerifierRef.current) {
-        recaptchaVerifierRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
-          size: 'normal',
-          callback: () => {
-            // reCAPTCHA solved, allow signInWithPhoneNumber.
-          }
-        });
+      // Clear any existing recaptcha
+      if (recaptchaVerifierRef.current) {
+        recaptchaVerifierRef.current.clear();
+        recaptchaVerifierRef.current = null;
       }
+      
+      // Create a new RecaptchaVerifier
+      recaptchaVerifierRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'normal',
+        callback: () => {
+          // reCAPTCHA solved, allow signInWithPhoneNumber.
+          console.log("Recaptcha verified");
+        },
+        'expired-callback': () => {
+          // Response expired. Ask user to solve reCAPTCHA again.
+          toast({
+            title: "Recaptcha expired",
+            description: "Please refresh the page and try again",
+            variant: "destructive",
+          });
+        }
+      });
 
       // Format the phone number (add country code if needed)
       const formattedPhone = phoneNumber.startsWith('+') 

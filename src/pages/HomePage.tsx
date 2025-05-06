@@ -7,7 +7,7 @@ import UserContainer from '../components/UserContainer';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Map, Calendar, User, Settings } from 'lucide-react';
-import { collection, query, where, limit, getDocs } from 'firebase/firestore';
+import { collection, query, where, limit, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { DriverProfile, Booking } from '../types';
 import { Switch } from '@/components/ui/switch';
@@ -45,14 +45,27 @@ const HomePage = () => {
   const navigate = useNavigate();
   const [nearbyDrivers, setNearbyDrivers] = useState<DriverProfile[]>([]);
   const [recentBookings, setRecentBookings] = useState<Booking[]>([]);
-  const [isOnline, setIsOnline] = useState(userProfile?.isActive || false);
+  const [isOnline, setIsOnline] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
+  // Directly fetch user profile from Firestore to ensure we have the latest status
   useEffect(() => {
-    // Update online status from user profile when it loads
-    if (userProfile) {
-      setIsOnline(userProfile.isActive || false);
-    }
+    const fetchDriverStatus = async () => {
+      if (userProfile?.role === 'driver' && userProfile?.id) {
+        try {
+          const userRef = doc(db, 'users', userProfile.id);
+          const userDoc = await getDoc(userRef);
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setIsOnline(userData.isActive || false);
+          }
+        } catch (error) {
+          console.error('Error fetching driver status:', error);
+        }
+      }
+    };
+
+    fetchDriverStatus();
   }, [userProfile]);
 
   useEffect(() => {
@@ -68,7 +81,6 @@ const HomePage = () => {
             driversRef,
             where('role', '==', 'driver'),
             where('isActive', '==', true),
-            where('isVerified', '==', true),
             limit(3)
           );
           
@@ -76,7 +88,12 @@ const HomePage = () => {
           const drivers: DriverProfile[] = [];
           
           driversSnapshot.forEach(doc => {
-            drivers.push({ id: doc.id, ...doc.data() } as DriverProfile);
+            const data = doc.data();
+            drivers.push({ 
+              id: doc.id, 
+              ...data,
+              createdAt: data.createdAt ? data.createdAt.toDate() : new Date()
+            } as DriverProfile);
           });
           
           setNearbyDrivers(drivers);
@@ -96,7 +113,14 @@ const HomePage = () => {
         const bookings: Booking[] = [];
         
         bookingsSnapshot.forEach(doc => {
-          bookings.push({ id: doc.id, ...doc.data() } as Booking);
+          const data = doc.data();
+          bookings.push({ 
+            id: doc.id, 
+            ...data,
+            requestedTime: data.requestedTime ? data.requestedTime.toDate() : new Date(),
+            createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
+            updatedAt: data.updatedAt ? data.updatedAt.toDate() : new Date()
+          } as Booking);
         });
         
         setRecentBookings(bookings);
@@ -121,13 +145,32 @@ const HomePage = () => {
     setIsUpdatingStatus(true);
     try {
       const newStatus = !isOnline;
+      console.log(`Attempting to update driver status to: ${newStatus ? 'online' : 'offline'}`);
+      
       const success = await updateDriverStatus(newStatus);
       
       if (success) {
         setIsOnline(newStatus);
+        toast({
+          title: newStatus ? "You're Online" : "You're Offline",
+          description: newStatus 
+            ? "You're now visible to farmers and can receive bookings" 
+            : "You won't receive new booking requests while offline",
+        });
+      } else {
+        toast({
+          title: "Status Update Failed",
+          description: "Could not update your online status. Please try again.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Error updating driver status:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while updating your status",
+        variant: "destructive"
+      });
     } finally {
       setIsUpdatingStatus(false);
     }

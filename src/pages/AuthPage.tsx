@@ -7,10 +7,15 @@ import OtpVerificationForm from '../components/OtpVerificationForm';
 import UserContainer from '../components/UserContainer';
 
 const AuthPage = () => {
-  const { currentUser, userProfile, isLoading } = useAuth();
+  const { currentUser, userProfile, isLoading, initializeRecaptcha } = useAuth();
   const [verificationId, setVerificationId] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  // Initialize recaptcha when page loads
+  useEffect(() => {
+    initializeRecaptcha();
+  }, [initializeRecaptcha]);
+  
   // Effect to handle redirection after auth state changes
   useEffect(() => {
     if (isLoading) return;

@@ -62,7 +62,7 @@ const OtpVerificationForm = ({ verificationId, onBackToPhone }: OtpVerificationF
         setOtp(''); // Reset OTP on error
       }
     } catch (error: any) {
-      console.error(error);
+      console.error("OTP verification error:", error);
       toast({
         title: 'Error',
         description: error.message || 'An unexpected error occurred. Please try again.',

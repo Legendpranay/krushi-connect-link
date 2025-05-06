@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { 
   onAuthStateChanged, 
   signInWithPhoneNumber,
@@ -9,8 +9,8 @@ import {
   signInWithCredential,
   User as FirebaseUser
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import { auth, db } from '../lib/firebase';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db, createRecaptchaVerifier } from '../lib/firebase';
 import { UserProfile, UserRole } from '../types';
 import { toast } from '@/components/ui/use-toast';
 
@@ -23,8 +23,8 @@ interface AuthContextType {
   confirmOtp: (verificationId: string, otp: string) => Promise<any>;
   logout: () => Promise<void>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
-  recaptchaVerifier: React.MutableRefObject<RecaptchaVerifier | null>;
   updateDriverStatus: (isActive: boolean) => Promise<boolean>;
+  initializeRecaptcha: () => void;
 }
 
 // Create the auth context
@@ -40,11 +40,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const recaptchaVerifierRef = React.useRef<RecaptchaVerifier | null>(null);
+  const [recaptchaVerifier, setRecaptchaVerifier] = useState<RecaptchaVerifier | null>(null);
+
+  // Initialize reCAPTCHA verifier
+  const initializeRecaptcha = useCallback(() => {
+    if (recaptchaVerifier) {
+      // Clean up previous instance if exists
+      try {
+        recaptchaVerifier.clear();
+      } catch (e) {
+        console.error("Error clearing previous recaptcha:", e);
+      }
+    }
+
+    try {
+      const verifier = createRecaptchaVerifier(auth);
+      setRecaptchaVerifier(verifier);
+      console.log("Recaptcha verifier initialized");
+    } catch (error) {
+      console.error("Failed to initialize reCAPTCHA:", error);
+    }
+  }, []);
 
   // Listen for auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log("Auth state changed:", user ? `User ${user.uid}` : "No user");
       setCurrentUser(user);
       
       if (user) {
@@ -53,7 +74,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           
           if (userDoc.exists()) {
-            setUserProfile(userDoc.data() as UserProfile);
+            const userData = userDoc.data();
+            // Convert Firestore timestamps to Date objects
+            const profile = {
+              ...userData,
+              createdAt: userData.createdAt ? new Date(userData.createdAt.seconds * 1000) : new Date()
+            } as UserProfile;
+            
+            setUserProfile(profile);
+            console.log("User profile loaded:", profile);
           } else {
             // Create a bare-bones user profile if it doesn't exist yet
             const newUserProfile: UserProfile = {
@@ -65,8 +94,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
               createdAt: new Date(),
             };
             
-            await setDoc(doc(db, 'users', user.uid), newUserProfile);
+            await setDoc(doc(db, 'users', user.uid), {
+              ...newUserProfile,
+              createdAt: serverTimestamp()
+            });
             setUserProfile(newUserProfile);
+            console.log("New user profile created");
           }
         } catch (error) {
           console.error("Error fetching/creating user profile:", error);
@@ -89,40 +122,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Sign in with phone number
   const signInWithPhone = async (phoneNumber: string) => {
     try {
-      // Clear any existing recaptcha
-      if (recaptchaVerifierRef.current) {
-        recaptchaVerifierRef.current.clear();
-        recaptchaVerifierRef.current = null;
+      if (!recaptchaVerifier) {
+        console.error("reCAPTCHA verifier not initialized");
+        return { 
+          success: false, 
+          error: "Authentication system not ready. Please refresh the page and try again."
+        };
       }
       
-      // Create a new RecaptchaVerifier
-      recaptchaVerifierRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'normal',
-        callback: () => {
-          // reCAPTCHA solved, allow signInWithPhoneNumber.
-          console.log("Recaptcha verified");
-        },
-        'expired-callback': () => {
-          // Response expired. Ask user to solve reCAPTCHA again.
-          toast({
-            title: "Recaptcha expired",
-            description: "Please refresh the page and try again",
-            variant: "destructive",
-          });
-        }
-      });
-
       // Format the phone number (add country code if needed)
       const formattedPhone = phoneNumber.startsWith('+') 
         ? phoneNumber 
         : `+91${phoneNumber}`; // Default to India country code
       
+      console.log(`Attempting to sign in with phone: ${formattedPhone}`);
+      
       // Start the phone sign in process
       const confirmationResult = await signInWithPhoneNumber(
         auth, 
         formattedPhone,
-        recaptchaVerifierRef.current
+        recaptchaVerifier
       );
+      
+      console.log("OTP sent successfully");
       
       // Return the verification ID to be used later for confirming the OTP
       return { 
@@ -141,23 +163,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Confirm OTP
   const confirmOtp = async (verificationId: string, otp: string) => {
     try {
+      console.log("Attempting to verify OTP");
       const credential = PhoneAuthProvider.credential(verificationId, otp);
       const result = await signInWithCredential(auth, credential);
+      console.log("OTP verified successfully");
       return { success: true, user: result.user };
     } catch (error: any) {
       console.error("Error confirming OTP:", error);
-      toast({
-        title: "Error confirming OTP",
-        description: error.message || "Invalid OTP. Please try again.",
-        variant: "destructive"
-      });
-      return { success: false, error: error.message };
+      return { 
+        success: false, 
+        error: error.message || "Invalid OTP. Please try again."
+      };
     }
   };
 
   // Log out
   const logout = async () => {
     await signOut(auth);
+    console.log("User logged out");
   };
 
   // Update user profile
@@ -166,32 +189,45 @@ export function AuthProvider({ children }: AuthProviderProps) {
       throw new Error('No user is signed in');
     }
 
-    const userRef = doc(db, 'users', currentUser.uid);
-    
-    // Get the current data first
-    const userDoc = await getDoc(userRef);
-    if (userDoc.exists()) {
-      // Merge with existing data
-      await updateDoc(userRef, { ...data });
-    } else {
-      // Create new document
-      await setDoc(userRef, { 
-        id: currentUser.uid,
-        phone: currentUser.phoneNumber || '',
-        ...data,
-        createdAt: new Date()
-      });
-    }
-    
-    // Update local state
-    if (userProfile) {
-      setUserProfile({ ...userProfile, ...data });
+    try {
+      const userRef = doc(db, 'users', currentUser.uid);
+      
+      // Get the current data first
+      const userDoc = await getDoc(userRef);
+      if (userDoc.exists()) {
+        // Merge with existing data
+        await updateDoc(userRef, { 
+          ...data,
+          updatedAt: serverTimestamp()
+        });
+      } else {
+        // Create new document
+        await setDoc(userRef, { 
+          id: currentUser.uid,
+          phone: currentUser.phoneNumber || '',
+          ...data,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      }
+      
+      // Update local state
+      if (userProfile) {
+        setUserProfile({ ...userProfile, ...data });
+      }
+      
+      console.log("User profile updated successfully");
+      return;
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+      throw new Error('Failed to update profile');
     }
   };
 
   // Update driver status (online/offline)
   const updateDriverStatus = async (isActive: boolean) => {
     if (!currentUser || userProfile?.role !== 'driver') {
+      console.error("Cannot update driver status: User not logged in or not a driver");
       toast({
         title: "Error",
         description: "You must be logged in as a driver to update status",
@@ -201,8 +237,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     try {
+      console.log(`Updating driver status to: ${isActive ? 'online' : 'offline'}`);
       const userRef = doc(db, 'users', currentUser.uid);
-      await updateDoc(userRef, { isActive });
+      
+      await updateDoc(userRef, { 
+        isActive,
+        updatedAt: serverTimestamp()
+      });
       
       // Update local state
       setUserProfile({
@@ -210,13 +251,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isActive
       });
       
-      toast({
-        title: isActive ? "You're Online" : "You're Offline",
-        description: isActive 
-          ? "You're now visible to farmers and can receive bookings" 
-          : "You won't receive new booking requests while offline",
-      });
-      
+      console.log(`Driver status updated to: ${isActive ? 'online' : 'offline'}`);
       return true;
     } catch (error) {
       console.error("Error updating driver status:", error);
@@ -237,8 +272,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     confirmOtp,
     logout,
     updateUserProfile,
-    recaptchaVerifier: recaptchaVerifierRef,
-    updateDriverStatus
+    updateDriverStatus,
+    initializeRecaptcha
   };
 
   return (

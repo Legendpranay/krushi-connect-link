@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
@@ -11,9 +11,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 const PhoneLoginForm = ({ onSuccess }: { onSuccess: (verificationId: string) => void }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { signInWithPhone } = useAuth();
+  const { signInWithPhone, initializeRecaptcha } = useAuth();
   const { t } = useLanguage();
 
+  useEffect(() => {
+    // Initialize recaptcha when component mounts
+    initializeRecaptcha();
+  }, [initializeRecaptcha]);
+  
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -32,6 +37,10 @@ const PhoneLoginForm = ({ onSuccess }: { onSuccess: (verificationId: string) => 
       const result = await signInWithPhone(phoneNumber);
       
       if (result.success) {
+        toast({
+          title: 'Success',
+          description: 'OTP sent successfully. Please check your phone.',
+        });
         onSuccess(result.verificationId);
       } else {
         toast({
@@ -40,11 +49,11 @@ const PhoneLoginForm = ({ onSuccess }: { onSuccess: (verificationId: string) => 
           variant: 'destructive',
         });
       }
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      console.error('Phone auth error:', error);
       toast({
         title: 'Error',
-        description: 'An unexpected error occurred. Please try again.',
+        description: error.message || 'An unexpected error occurred. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -105,7 +114,8 @@ const PhoneLoginForm = ({ onSuccess }: { onSuccess: (verificationId: string) => 
               </p>
             </div>
             
-            <div id="recaptcha-container" className="mb-4"></div>
+            {/* Hidden div for invisible recaptcha */}
+            <div id="invisible-recaptcha"></div>
             
             <Button 
               type="submit" 

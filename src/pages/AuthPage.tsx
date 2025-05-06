@@ -16,6 +16,7 @@ const AuthPage = () => {
     if (isLoading) return;
     
     if (currentUser) {
+      // Handle user redirection based on profile completion state
       if (userProfile?.isProfileComplete) {
         navigate("/");
       } else if (!userProfile?.role) {
@@ -24,6 +25,9 @@ const AuthPage = () => {
         navigate("/complete-farmer-profile");
       } else if (userProfile?.role === 'driver') {
         navigate("/complete-driver-profile");
+      } else {
+        // Fallback to home if something unexpected happens
+        navigate("/");
       }
     }
   }, [currentUser, userProfile, isLoading, navigate]);
@@ -39,8 +43,8 @@ const AuthPage = () => {
   }
 
   // If user is already logged in, don't render the auth page
+  // (Redirection is handled by the useEffect hook)
   if (currentUser) {
-    // Redirection is handled by the useEffect hook
     return null;
   }
 

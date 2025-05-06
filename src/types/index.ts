@@ -16,12 +16,20 @@ export interface UserProfile {
   isProfileComplete: boolean;
   createdAt: Date;
   language?: Language;
-  // Add properties that are used in both DriverProfile and FarmerProfile
+  // Driver-specific properties
   tractorImage?: string;
   licenseImage?: string;
+  tractorType?: string;
+  isVerified?: boolean;
+  isActive?: boolean;  // Whether driver is online and available
+  rating?: number;
+  totalRatings?: number;
+  equipment?: Equipment[];
+  // Farmer-specific properties
   farmSize?: number;
   farmLocation?: GeoPoint;
   location?: GeoPoint;
+  preferredPaymentMethod?: PaymentMethod;
 }
 
 export interface DriverProfile extends UserProfile {
@@ -31,11 +39,11 @@ export interface DriverProfile extends UserProfile {
   licenseImage?: string;
   equipment: Equipment[];
   isVerified: boolean;
+  isActive: boolean;
   rating?: number;
   totalRatings?: number;
   reviews?: Review[];
   location?: GeoPoint;
-  isActive: boolean;
 }
 
 export interface FarmerProfile extends UserProfile {

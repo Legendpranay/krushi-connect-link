@@ -7,12 +7,9 @@ import {
   RecaptchaVerifier,
   signOut,
   signInWithCredential,
-  User as FirebaseUser,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword,
-  updateProfile
+  User as FirebaseUser
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { UserProfile, UserRole } from '../types';
 import { toast } from '@/components/ui/use-toast';
@@ -27,8 +24,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
   recaptchaVerifier: React.MutableRefObject<RecaptchaVerifier | null>;
-  signInWithEmailPassword: (email: string, password: string) => Promise<any>;
-  registerWithEmailPassword: (email: string, password: string, name: string) => Promise<any>;
+  updateDriverStatus: (isActive: boolean) => Promise<boolean>;
 }
 
 // Create the auth context
@@ -63,8 +59,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             const newUserProfile: UserProfile = {
               id: user.uid,
               phone: user.phoneNumber || '',
-              email: user.email || '',
-              name: user.displayName || '',
+              name: '',
               role: null, // User will select role during onboarding
               isProfileComplete: false,
               createdAt: new Date(),
@@ -134,11 +129,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         verificationId: confirmationResult.verificationId,
         success: true 
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error during phone authentication:", error);
       return { 
         success: false, 
-        error 
+        error: error.message || "Failed to send OTP" 
       };
     }
   };
@@ -149,60 +144,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const credential = PhoneAuthProvider.credential(verificationId, otp);
       const result = await signInWithCredential(auth, credential);
       return { success: true, user: result.user };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error confirming OTP:", error);
-      return { success: false, error };
-    }
-  };
-
-  // Sign in with email and password
-  const signInWithEmailPassword = async (email: string, password: string) => {
-    try {
-      const userCredential = await firebaseSignInWithEmailAndPassword(auth, email, password);
-      return { success: true, user: userCredential.user };
-    } catch (error) {
-      console.error("Error signing in with email:", error);
       toast({
-        title: "Login Failed",
-        description: "Invalid email or password. Please try again.",
+        title: "Error confirming OTP",
+        description: error.message || "Invalid OTP. Please try again.",
         variant: "destructive"
       });
-      return { success: false, error };
-    }
-  };
-
-  // Register with email and password
-  const registerWithEmailPassword = async (email: string, password: string, name: string) => {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Update profile with name
-      await updateProfile(userCredential.user, {
-        displayName: name
-      });
-      
-      // Create user profile in Firestore
-      const newUserProfile: UserProfile = {
-        id: userCredential.user.uid,
-        email,
-        name,
-        phone: '',
-        role: null,
-        isProfileComplete: false,
-        createdAt: new Date(),
-      };
-      
-      await setDoc(doc(db, 'users', userCredential.user.uid), newUserProfile);
-      
-      return { success: true, user: userCredential.user };
-    } catch (error) {
-      console.error("Error registering with email:", error);
-      toast({
-        title: "Registration Failed",
-        description: "Could not create account. Email might already be in use.",
-        variant: "destructive"
-      });
-      return { success: false, error };
+      return { success: false, error: error.message };
     }
   };
 
@@ -218,11 +167,65 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     const userRef = doc(db, 'users', currentUser.uid);
-    await setDoc(userRef, { ...data }, { merge: true });
+    
+    // Get the current data first
+    const userDoc = await getDoc(userRef);
+    if (userDoc.exists()) {
+      // Merge with existing data
+      await updateDoc(userRef, { ...data });
+    } else {
+      // Create new document
+      await setDoc(userRef, { 
+        id: currentUser.uid,
+        phone: currentUser.phoneNumber || '',
+        ...data,
+        createdAt: new Date()
+      });
+    }
     
     // Update local state
     if (userProfile) {
       setUserProfile({ ...userProfile, ...data });
+    }
+  };
+
+  // Update driver status (online/offline)
+  const updateDriverStatus = async (isActive: boolean) => {
+    if (!currentUser || userProfile?.role !== 'driver') {
+      toast({
+        title: "Error",
+        description: "You must be logged in as a driver to update status",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    try {
+      const userRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userRef, { isActive });
+      
+      // Update local state
+      setUserProfile({
+        ...userProfile,
+        isActive
+      });
+      
+      toast({
+        title: isActive ? "You're Online" : "You're Offline",
+        description: isActive 
+          ? "You're now visible to farmers and can receive bookings" 
+          : "You won't receive new booking requests while offline",
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error updating driver status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update your status. Please try again.",
+        variant: "destructive"
+      });
+      return false;
     }
   };
 
@@ -235,8 +238,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     logout,
     updateUserProfile,
     recaptchaVerifier: recaptchaVerifierRef,
-    signInWithEmailPassword,
-    registerWithEmailPassword
+    updateDriverStatus
   };
 
   return (

@@ -56,17 +56,19 @@ const OtpVerificationForm = ({ verificationId, onBackToPhone }: OtpVerificationF
       } else {
         toast({
           title: 'Error',
-          description: 'Invalid OTP. Please try again.',
+          description: result.error || 'Invalid OTP. Please try again.',
           variant: 'destructive',
         });
+        setOtp(''); // Reset OTP on error
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       toast({
         title: 'Error',
-        description: 'An unexpected error occurred. Please try again.',
+        description: error.message || 'An unexpected error occurred. Please try again.',
         variant: 'destructive',
       });
+      setOtp(''); // Reset OTP on error
     } finally {
       setIsLoading(false);
     }
@@ -85,7 +87,7 @@ const OtpVerificationForm = ({ verificationId, onBackToPhone }: OtpVerificationF
         <img 
           src="/assets/logo.png" 
           alt="KrushiLink Logo" 
-          className="mx-auto h-24 w-auto"
+          className="mx-auto h-24 w-auto object-contain"
           onError={(e) => {
             (e.target as HTMLImageElement).src = '/placeholder.svg';
           }}

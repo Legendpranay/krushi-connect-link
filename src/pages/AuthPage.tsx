@@ -1,20 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import PhoneLoginForm from '../components/PhoneLoginForm';
-import OtpVerificationForm from '../components/OtpVerificationForm';
+import EmailLoginForm from '../components/EmailLoginForm';
 import UserContainer from '../components/UserContainer';
 
 const AuthPage = () => {
-  const { currentUser, userProfile, isLoading, initializeRecaptcha } = useAuth();
-  const [verificationId, setVerificationId] = useState<string | null>(null);
+  const { currentUser, userProfile, isLoading } = useAuth();
   const navigate = useNavigate();
-
-  // Initialize recaptcha when page loads
-  useEffect(() => {
-    initializeRecaptcha();
-  }, [initializeRecaptcha]);
   
   // Effect to handle redirection after auth state changes
   useEffect(() => {
@@ -53,26 +46,12 @@ const AuthPage = () => {
     return null;
   }
 
-  // Show OTP verification form if verificationId is set
-  if (verificationId) {
-    return (
-      <UserContainer hideBottomNav>
-        <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col justify-center">
-          <OtpVerificationForm 
-            verificationId={verificationId}
-            onBackToPhone={() => setVerificationId(null)}
-          />
-        </div>
-      </UserContainer>
-    );
-  }
-
-  // Otherwise, show phone login form
+  // Show email login form
   return (
     <UserContainer hideBottomNav>
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col justify-center">
-        <PhoneLoginForm
-          onSuccess={(verId) => setVerificationId(verId)}
+        <EmailLoginForm
+          onSuccess={() => {/* Nothing needed here - redirects handled by useEffect */}}
         />
       </div>
     </UserContainer>

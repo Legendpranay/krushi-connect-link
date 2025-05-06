@@ -9,12 +9,16 @@ import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { Booking } from '../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { WalletCards, TrendingUp } from 'lucide-react';
 
 const DriverEarningsPage = () => {
-  const { userProfile } = useAuth();
+  const { userProfile, updateDriverStatus } = useAuth();
   const { t } = useLanguage();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isOnlineToggling, setIsOnlineToggling] = useState(false);
   
   // Fetch driver's bookings
   useEffect(() => {
@@ -59,6 +63,24 @@ const DriverEarningsPage = () => {
       setIsLoading(false); // Make sure we stop loading even if no user profile
     }
   }, [userProfile]);
+
+  // Handle online/offline toggle
+  const handleStatusChange = async (checked: boolean) => {
+    setIsOnlineToggling(true);
+    try {
+      const success = await updateDriverStatus(checked);
+      if (!success) {
+        // If the status update failed, don't continue
+        setIsOnlineToggling(false);
+      } else {
+        // Status updated successfully, refreshing is handled by the updateDriverStatus function
+        setIsOnlineToggling(false);
+      }
+    } catch (error) {
+      console.error("Failed to update online status:", error);
+      setIsOnlineToggling(false);
+    }
+  };
 
   // Calculate earnings stats - always default to 0
   const totalEarnings = bookings
@@ -128,7 +150,21 @@ const DriverEarningsPage = () => {
   return (
     <UserContainer>
       <div className="p-4">
-        <h2 className="text-2xl font-bold mb-6">{t('driver.earnings')}</h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold">{t('driver.earnings')}</h2>
+          
+          <div className="flex items-center space-x-2">
+            <Label htmlFor="online-status" className={isOnlineToggling ? "text-muted-foreground" : ""}>
+              {userProfile?.isActive ? "Online" : "Offline"}
+            </Label>
+            <Switch
+              id="online-status"
+              checked={!!userProfile?.isActive}
+              onCheckedChange={handleStatusChange}
+              disabled={isOnlineToggling}
+            />
+          </div>
+        </div>
         
         {isLoading ? (
           <>
@@ -160,19 +196,28 @@ const DriverEarningsPage = () => {
             <div className="grid grid-cols-3 gap-4 mb-6">
               <Card>
                 <CardContent className="p-4 flex flex-col items-center justify-center">
-                  <p className="text-sm text-muted-foreground">Total Earnings</p>
+                  <div className="flex items-center justify-center space-x-2 mb-2">
+                    <WalletCards className="h-5 w-5 text-primary" />
+                    <p className="text-sm text-muted-foreground">Total Earnings</p>
+                  </div>
                   <p className="text-2xl font-bold">₹{totalEarnings}</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4 flex flex-col items-center justify-center">
-                  <p className="text-sm text-muted-foreground">Paid</p>
+                  <div className="flex items-center justify-center space-x-2 mb-2">
+                    <TrendingUp className="h-5 w-5 text-green-500" />
+                    <p className="text-sm text-muted-foreground">Paid</p>
+                  </div>
                   <p className="text-2xl font-bold text-green-600">₹{paidEarnings}</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4 flex flex-col items-center justify-center">
-                  <p className="text-sm text-muted-foreground">Pending</p>
+                  <div className="flex items-center justify-center space-x-2 mb-2">
+                    <TrendingUp className="h-5 w-5 text-amber-500" />
+                    <p className="text-sm text-muted-foreground">Pending</p>
+                  </div>
                   <p className="text-2xl font-bold text-amber-600">₹{pendingEarnings}</p>
                 </CardContent>
               </Card>

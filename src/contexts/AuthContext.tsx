@@ -1,16 +1,14 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { 
   onAuthStateChanged, 
-  signInWithPhoneNumber,
-  PhoneAuthProvider,
-  RecaptchaVerifier,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
   signOut,
-  signInWithCredential,
   User as FirebaseUser
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db, createRecaptchaVerifier } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
 import { UserProfile, UserRole } from '../types';
 import { toast } from '@/components/ui/use-toast';
 
@@ -19,12 +17,11 @@ interface AuthContextType {
   currentUser: FirebaseUser | null;
   userProfile: UserProfile | null;
   isLoading: boolean;
-  signInWithPhone: (phoneNumber: string) => Promise<any>;
-  confirmOtp: (verificationId: string, otp: string) => Promise<any>;
+  signUp: (email: string, password: string) => Promise<any>;
+  signIn: (email: string, password: string) => Promise<any>;
   logout: () => Promise<void>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
   updateDriverStatus: (isActive: boolean) => Promise<boolean>;
-  initializeRecaptcha: () => void;
 }
 
 // Create the auth context
@@ -40,27 +37,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [recaptchaVerifier, setRecaptchaVerifier] = useState<RecaptchaVerifier | null>(null);
-
-  // Initialize reCAPTCHA verifier
-  const initializeRecaptcha = useCallback(() => {
-    if (recaptchaVerifier) {
-      // Clean up previous instance if exists
-      try {
-        recaptchaVerifier.clear();
-      } catch (e) {
-        console.error("Error clearing previous recaptcha:", e);
-      }
-    }
-
-    try {
-      const verifier = createRecaptchaVerifier(auth);
-      setRecaptchaVerifier(verifier);
-      console.log("Recaptcha verifier initialized");
-    } catch (error) {
-      console.error("Failed to initialize reCAPTCHA:", error);
-    }
-  }, []);
 
   // Listen for auth state changes
   useEffect(() => {
@@ -87,7 +63,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             // Create a bare-bones user profile if it doesn't exist yet
             const newUserProfile: UserProfile = {
               id: user.uid,
-              phone: user.phoneNumber || '',
+              email: user.email || '',
               name: '',
               role: null, // User will select role during onboarding
               isProfileComplete: false,
@@ -119,85 +95,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return unsubscribe;
   }, []);
 
-  // Sign in with phone number
-  const signInWithPhone = async (phoneNumber: string) => {
+  // Sign up with email and password
+  const signUp = async (email: string, password: string) => {
     try {
-      if (!recaptchaVerifier) {
-        console.error("reCAPTCHA verifier not initialized");
-        return { 
-          success: false, 
-          error: "Authentication system not ready. Please refresh the page and try again."
-        };
-      }
-      
-      // Format the phone number (add country code if needed)
-      const formattedPhone = phoneNumber.startsWith('+') 
-        ? phoneNumber 
-        : `+91${phoneNumber}`; // Default to India country code
-      
-      console.log(`Attempting to sign in with phone: ${formattedPhone}`);
-      
-      // Start the phone sign in process
-      const confirmationResult = await signInWithPhoneNumber(
-        auth, 
-        formattedPhone,
-        recaptchaVerifier
-      );
-      
-      console.log("OTP sent successfully");
-      
-      // Return the verification ID to be used later for confirming the OTP
-      return { 
-        verificationId: confirmationResult.verificationId,
-        success: true 
-      };
+      console.log(`Attempting to sign up with email: ${email}`);
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      console.log("Sign up successful");
+      return { success: true, user: result.user };
     } catch (error: any) {
-      console.error("Error during phone authentication:", error);
-      
-      // Handle specific Firebase errors
-      if (error.code === 'auth/billing-not-enabled') {
-        return {
-          success: false,
-          error: "Firebase billing is not enabled. The app owner needs to enable billing on the Firebase project to use phone authentication.",
-          billingError: true
-        };
-      } else if (error.code === 'auth/quota-exceeded') {
-        return {
-          success: false,
-          error: "SMS quota exceeded. Please try again tomorrow."
-        };
-      } else if (error.code === 'auth/invalid-phone-number') {
-        return {
-          success: false,
-          error: "Please enter a valid phone number with correct format."
-        };
-      } else if (error.code === 'auth/captcha-check-failed') {
-        return {
-          success: false,
-          error: "reCAPTCHA verification failed. Please refresh and try again."
-        };
-      }
-      
+      console.error("Error during sign up:", error);
       return { 
         success: false, 
-        error: error.message || "Failed to send OTP" 
+        error: error.message || "Failed to sign up" 
       };
     }
   };
 
-  // Confirm OTP
-  const confirmOtp = async (verificationId: string, otp: string) => {
+  // Sign in with email and password
+  const signIn = async (email: string, password: string) => {
     try {
-      console.log("Attempting to verify OTP");
-      const credential = PhoneAuthProvider.credential(verificationId, otp);
-      const result = await signInWithCredential(auth, credential);
-      console.log("OTP verified successfully");
+      console.log(`Attempting to sign in with email: ${email}`);
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      console.log("Sign in successful");
       return { success: true, user: result.user };
     } catch (error: any) {
-      console.error("Error confirming OTP:", error);
+      console.error("Error during sign in:", error);
       return { 
         success: false, 
-        error: error.message || "Invalid OTP. Please try again."
+        error: error.message || "Failed to sign in" 
       };
     }
   };
@@ -229,7 +154,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Create new document
         await setDoc(userRef, { 
           id: currentUser.uid,
-          phone: currentUser.phoneNumber || '',
+          email: currentUser.email || '',
           ...data,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
@@ -271,12 +196,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
       });
       
       // Update local state
-      setUserProfile({
-        ...userProfile,
-        isActive
+      setUserProfile(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          isActive
+        };
       });
       
       console.log(`Driver status updated to: ${isActive ? 'online' : 'offline'}`);
+      
+      // Show a success toast
+      toast({
+        title: "Status Updated",
+        description: `You are now ${isActive ? 'online' : 'offline'}`,
+      });
+      
       return true;
     } catch (error) {
       console.error("Error updating driver status:", error);
@@ -293,12 +228,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     currentUser,
     userProfile,
     isLoading,
-    signInWithPhone,
-    confirmOtp,
+    signUp,
+    signIn,
     logout,
     updateUserProfile,
-    updateDriverStatus,
-    initializeRecaptcha
+    updateDriverStatus
   };
 
   return (

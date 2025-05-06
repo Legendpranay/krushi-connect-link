@@ -1,6 +1,6 @@
 
 import { initializeApp } from 'firebase/app';
-import { getAuth, RecaptchaVerifier } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
@@ -21,25 +21,6 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
-
-// Disable app verification for testing (ONLY for development)
-// Remove this in production!
-if (process.env.NODE_ENV !== 'production') {
-  auth.settings.appVerificationDisabledForTesting = true;
-}
-
-// Utility function to create invisible recaptcha
-export const createRecaptchaVerifier = (auth) => {
-  return new RecaptchaVerifier(auth, 'invisible-recaptcha', {
-    size: 'invisible', // Make sure it's invisible
-    callback: () => {
-      console.log('reCAPTCHA solved');
-    },
-    'expired-callback': () => {
-      console.log('reCAPTCHA expired');
-    },
-  });
-};
 
 // Export as default
 export default app;

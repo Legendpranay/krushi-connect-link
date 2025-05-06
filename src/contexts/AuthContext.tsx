@@ -153,6 +153,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
       };
     } catch (error: any) {
       console.error("Error during phone authentication:", error);
+      
+      // Handle specific Firebase errors
+      if (error.code === 'auth/billing-not-enabled') {
+        return {
+          success: false,
+          error: "Firebase billing is not enabled. The app owner needs to enable billing on the Firebase project to use phone authentication.",
+          billingError: true
+        };
+      } else if (error.code === 'auth/quota-exceeded') {
+        return {
+          success: false,
+          error: "SMS quota exceeded. Please try again tomorrow."
+        };
+      } else if (error.code === 'auth/invalid-phone-number') {
+        return {
+          success: false,
+          error: "Please enter a valid phone number with correct format."
+        };
+      } else if (error.code === 'auth/captcha-check-failed') {
+        return {
+          success: false,
+          error: "reCAPTCHA verification failed. Please refresh and try again."
+        };
+      }
+      
       return { 
         success: false, 
         error: error.message || "Failed to send OTP" 

@@ -31,7 +31,7 @@ if (process.env.NODE_ENV !== 'production') {
 // Utility function to create invisible recaptcha
 export const createRecaptchaVerifier = (auth) => {
   return new RecaptchaVerifier(auth, 'invisible-recaptcha', {
-    size: 'invisible',
+    size: 'invisible', // Make sure it's invisible
     callback: () => {
       console.log('reCAPTCHA solved');
     },

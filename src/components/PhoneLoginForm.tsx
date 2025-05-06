@@ -7,10 +7,13 @@ import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
 import { Phone } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 
 const PhoneLoginForm = ({ onSuccess }: { onSuccess: (verificationId: string) => void }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [billingError, setBillingError] = useState(false);
   const { signInWithPhone, initializeRecaptcha } = useAuth();
   const { t } = useLanguage();
 
@@ -32,6 +35,7 @@ const PhoneLoginForm = ({ onSuccess }: { onSuccess: (verificationId: string) => 
     }
     
     setIsLoading(true);
+    setBillingError(false);
     
     try {
       const result = await signInWithPhone(phoneNumber);
@@ -43,6 +47,11 @@ const PhoneLoginForm = ({ onSuccess }: { onSuccess: (verificationId: string) => 
         });
         onSuccess(result.verificationId);
       } else {
+        // Check if it's a billing error
+        if (result.billingError) {
+          setBillingError(true);
+        }
+        
         toast({
           title: 'Error',
           description: result.error || 'Failed to send OTP. Please try again.',
@@ -80,6 +89,16 @@ const PhoneLoginForm = ({ onSuccess }: { onSuccess: (verificationId: string) => 
         </p>
       </div>
       
+      {billingError && (
+        <Alert variant="destructive" className="mb-4">
+          <Info className="h-4 w-4" />
+          <AlertTitle>Firebase Billing Required</AlertTitle>
+          <AlertDescription>
+            Phone authentication requires Firebase billing to be enabled. Please contact the app administrator.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <Card className="border-none shadow-lg">
         <CardHeader className="bg-primary rounded-t-lg text-white">
           <CardTitle>Sign In with Phone</CardTitle>
@@ -114,8 +133,8 @@ const PhoneLoginForm = ({ onSuccess }: { onSuccess: (verificationId: string) => 
               </p>
             </div>
             
-            {/* Hidden div for invisible recaptcha */}
-            <div id="invisible-recaptcha"></div>
+            {/* Hidden div for invisible recaptcha - kept but will be invisible */}
+            <div id="invisible-recaptcha" className="invisible"></div>
             
             <Button 
               type="submit" 

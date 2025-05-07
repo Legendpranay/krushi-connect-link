@@ -71,6 +71,7 @@ const DriverProfileForm = () => {
         return;
       }
 
+      console.log('Starting profile image upload process');
       // Upload images
       let profileImageUrl = userProfile?.profileImage || '';
       let tractorImageUrl = '';
@@ -80,26 +81,33 @@ const DriverProfileForm = () => {
         const imageRef = ref(storage, `profile-images/${userProfile?.id}/${Date.now()}`);
         await uploadBytes(imageRef, profileImage);
         profileImageUrl = await getDownloadURL(imageRef);
+        console.log('Profile image uploaded:', profileImageUrl);
       }
       
+      console.log('Starting tractor image upload process');
       if (tractorImage) {
         const imageRef = ref(storage, `tractor-images/${userProfile?.id}/${Date.now()}`);
         await uploadBytes(imageRef, tractorImage);
         tractorImageUrl = await getDownloadURL(imageRef);
+        console.log('Tractor image uploaded:', tractorImageUrl);
       }
       
+      console.log('Starting license image upload process');
       if (licenseImage) {
         const imageRef = ref(storage, `license-images/${userProfile?.id}/${Date.now()}`);
         await uploadBytes(imageRef, licenseImage);
         licenseImageUrl = await getDownloadURL(imageRef);
+        console.log('License image uploaded:', licenseImageUrl);
       }
       
+      console.log('Starting equipment saving process');
       // Save equipment to Firestore
       const savedEquipment: Equipment[] = [];
       for (const item of equipment) {
         // Skip empty equipment
         if (!item.name || item.pricePerAcre <= 0) continue;
         
+        console.log('Saving equipment item:', item);
         const equipmentRef = await addDoc(collection(db, 'equipment'), {
           name: item.name,
           pricePerAcre: item.pricePerAcre,
@@ -116,24 +124,35 @@ const DriverProfileForm = () => {
         });
       }
       
-      // Update user profile
-      await updateUserProfile({
+      console.log('Updating user profile');
+      // Update user profile with all collected data
+      const profileData = {
         ...formData,
         profileImage: profileImageUrl,
         tractorImage: tractorImageUrl,
         licenseImage: licenseImageUrl,
         isProfileComplete: true,
-        role: 'driver' as const
-      });
+        role: 'driver' as const,
+        isActive: false, // Start as offline
+        equipment: savedEquipment
+      };
       
+      console.log('Sending profile update with data:', profileData);
+      // Update user profile
+      await updateUserProfile(profileData);
+      
+      console.log('Profile update successful');
       toast({
         description: 'Profile updated successfully. Waiting for admin verification.',
       });
       
-      // Redirect to home page
-      navigate('/');
+      // Redirect to home page after a short delay
+      setTimeout(() => {
+        console.log('Redirecting to home page');
+        navigate('/');
+      }, 500);
     } catch (error) {
-      console.error(error);
+      console.error('Error updating driver profile:', error);
       toast({
         title: 'Error',
         description: 'Failed to update profile. Please try again.',

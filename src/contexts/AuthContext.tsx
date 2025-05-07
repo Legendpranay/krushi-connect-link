@@ -141,22 +141,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     try {
+      console.log("Updating user profile with data:", data);
       const userRef = doc(db, 'users', currentUser.uid);
       
       // Get the current data first
       const userDoc = await getDoc(userRef);
       if (userDoc.exists()) {
         // Merge with existing data
+        console.log("Existing user document found, updating...");
         await updateDoc(userRef, { 
           ...data,
           updatedAt: serverTimestamp()
         });
       } else {
         // Create new document
+        console.log("No existing user document, creating new one...");
         await setDoc(userRef, { 
           id: currentUser.uid,
           email: currentUser.email || '',
-          phone: '', // Adding the required phone field with empty string default
+          phone: '',
           ...data,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
@@ -165,7 +168,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       // Update local state
       if (userProfile) {
-        setUserProfile({ ...userProfile, ...data });
+        const updatedProfile = { ...userProfile, ...data };
+        console.log("Updating local user profile state:", updatedProfile);
+        setUserProfile(updatedProfile);
       }
       
       console.log("User profile updated successfully");

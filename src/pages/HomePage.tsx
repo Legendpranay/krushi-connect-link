@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -45,8 +44,15 @@ const HomePage = () => {
   const navigate = useNavigate();
   const [nearbyDrivers, setNearbyDrivers] = useState<DriverProfile[]>([]);
   const [recentBookings, setRecentBookings] = useState<Booking[]>([]);
-  const [isOnline, setIsOnline] = useState(false);
+  const [isOnline, setIsOnline] = useState(userProfile?.isActive || false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  // Update online status when userProfile changes
+  useEffect(() => {
+    if (userProfile?.role === 'driver') {
+      setIsOnline(userProfile.isActive || false);
+    }
+  }, [userProfile]);
 
   // Directly fetch user profile from Firestore to ensure we have the latest status
   useEffect(() => {

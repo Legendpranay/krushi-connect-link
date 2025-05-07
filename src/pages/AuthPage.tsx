@@ -14,17 +14,29 @@ const AuthPage = () => {
     if (isLoading) return;
     
     if (currentUser) {
+      console.log("Auth page - user logged in, profile state:", 
+                  userProfile ? `Role: ${userProfile.role}, Complete: ${userProfile.isProfileComplete}` : "No profile");
+      
       // Handle user redirection based on profile completion state
-      if (userProfile?.isProfileComplete) {
-        navigate("/");
-      } else if (!userProfile?.role) {
+      if (!userProfile) {
+        console.log("No user profile available yet, waiting...");
+        return; // Wait for profile to load
+      }
+      
+      if (!userProfile.role) {
+        console.log("Redirecting to role selection");
         navigate("/select-role");
-      } else if (userProfile?.role === 'farmer') {
-        navigate("/complete-farmer-profile");
-      } else if (userProfile?.role === 'driver') {
-        navigate("/complete-driver-profile");
+      } else if (userProfile.isProfileComplete === false) {
+        if (userProfile.role === 'farmer') {
+          console.log("Redirecting to complete farmer profile");
+          navigate("/complete-farmer-profile");
+        } else if (userProfile.role === 'driver') {
+          console.log("Redirecting to complete driver profile");
+          navigate("/complete-driver-profile");
+        }
       } else {
-        // Fallback to home if something unexpected happens
+        // Profile is complete, go to home
+        console.log("Profile is complete, redirecting to home");
         navigate("/");
       }
     }

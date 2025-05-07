@@ -18,6 +18,15 @@ const RoleSelectionPage = () => {
     return <Navigate to="/" />;
   }
 
+  // If has role but profile is incomplete, redirect to the appropriate profile completion page
+  if (userProfile?.role && !userProfile?.isProfileComplete) {
+    if (userProfile.role === 'farmer') {
+      return <Navigate to="/complete-farmer-profile" />;
+    } else if (userProfile.role === 'driver') {
+      return <Navigate to="/complete-driver-profile" />;
+    }
+  }
+
   return (
     <UserContainer hideBottomNav>
       <RoleSelectionForm />

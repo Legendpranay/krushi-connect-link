@@ -24,16 +24,16 @@ const Index = () => {
   }
 
   // If logged in but needs to select role
-  if (currentUser && !userProfile?.role) {
+  if (currentUser && userProfile && !userProfile.role) {
     return <Navigate to="/select-role" />;
   }
 
   // If logged in but profile is incomplete
-  if (currentUser && !userProfile?.isProfileComplete) {
-    if (userProfile?.role === 'farmer') {
+  if (currentUser && userProfile?.role && userProfile.isProfileComplete === false) {
+    if (userProfile.role === 'farmer') {
       return <Navigate to="/complete-farmer-profile" />;
     }
-    if (userProfile?.role === 'driver') {
+    if (userProfile.role === 'driver') {
       return <Navigate to="/complete-driver-profile" />;
     }
   }

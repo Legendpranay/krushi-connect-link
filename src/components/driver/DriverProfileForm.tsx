@@ -45,7 +45,12 @@ const DriverProfileForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent multiple submissions
+    if (isLoading) return;
+    
     setIsLoading(true);
+    console.log('Form submission started');
     
     try {
       // Validate form
@@ -71,11 +76,32 @@ const DriverProfileForm = () => {
         return;
       }
 
+      // Validate required images
+      if (!tractorImage && !userProfile?.tractorImage) {
+        toast({
+          title: 'Error',
+          description: 'Please upload a tractor image',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (!licenseImage && !userProfile?.licenseImage) {
+        toast({
+          title: 'Error',
+          description: 'Please upload a license image',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+
       console.log('Starting profile image upload process');
       // Upload images
       let profileImageUrl = userProfile?.profileImage || '';
-      let tractorImageUrl = '';
-      let licenseImageUrl = '';
+      let tractorImageUrl = userProfile?.tractorImage || '';
+      let licenseImageUrl = userProfile?.licenseImage || '';
       
       if (profileImage) {
         const imageRef = ref(storage, `profile-images/${userProfile?.id}/${Date.now()}`);
@@ -108,20 +134,26 @@ const DriverProfileForm = () => {
         if (!item.name || item.pricePerAcre <= 0) continue;
         
         console.log('Saving equipment item:', item);
-        const equipmentRef = await addDoc(collection(db, 'equipment'), {
-          name: item.name,
-          pricePerAcre: item.pricePerAcre,
-          pricePerHour: item.pricePerHour || null,
-          driverId: userProfile?.id,
-          createdAt: new Date()
-        });
-        
-        savedEquipment.push({
-          id: equipmentRef.id,
-          name: item.name,
-          pricePerAcre: item.pricePerAcre,
-          pricePerHour: item.pricePerHour
-        });
+        try {
+          const equipmentRef = await addDoc(collection(db, 'equipment'), {
+            name: item.name,
+            pricePerAcre: item.pricePerAcre,
+            pricePerHour: item.pricePerHour || null,
+            driverId: userProfile?.id,
+            createdAt: new Date()
+          });
+          
+          savedEquipment.push({
+            id: equipmentRef.id,
+            name: item.name,
+            pricePerAcre: item.pricePerAcre,
+            pricePerHour: item.pricePerHour
+          });
+          console.log('Equipment saved successfully:', equipmentRef.id);
+        } catch (equipError) {
+          console.error('Error saving equipment item:', equipError);
+          // Continue with other equipment items even if one fails
+        }
       }
       
       console.log('Updating user profile');
@@ -147,10 +179,11 @@ const DriverProfileForm = () => {
       });
       
       // Redirect to home page after a short delay
+      console.log('Scheduling redirect to home page');
       setTimeout(() => {
-        console.log('Redirecting to home page');
+        console.log('Redirecting to home page now');
         navigate('/');
-      }, 500);
+      }, 1000);
     } catch (error) {
       console.error('Error updating driver profile:', error);
       toast({
@@ -159,6 +192,8 @@ const DriverProfileForm = () => {
         variant: 'destructive',
       });
     } finally {
+      // Always reset loading state, even if there was an error
+      console.log('Resetting loading state');
       setIsLoading(false);
     }
   };

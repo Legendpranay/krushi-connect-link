@@ -137,6 +137,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Update user profile
   const updateUserProfile = async (data: Partial<UserProfile>) => {
     if (!currentUser) {
+      console.error("Cannot update profile: No user is signed in");
       throw new Error('No user is signed in');
     }
 
@@ -153,6 +154,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           ...data,
           updatedAt: serverTimestamp()
         });
+        console.log("Document updated successfully");
       } else {
         // Create new document
         console.log("No existing user document, creating new one...");
@@ -164,6 +166,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
+        console.log("Document created successfully");
       }
       
       // Update local state
@@ -171,6 +174,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const updatedProfile = { ...userProfile, ...data };
         console.log("Updating local user profile state:", updatedProfile);
         setUserProfile(updatedProfile);
+      } else {
+        console.log("No local userProfile state to update");
       }
       
       console.log("User profile updated successfully");

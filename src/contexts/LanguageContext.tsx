@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 // Available languages
-type Language = 'en' | 'hi';
+type Language = 'en' | 'hi' | 'mr';
 
 // Context type definition
 interface LanguageContextType {
@@ -57,6 +57,11 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.editProfile': 'Edit Profile',
     'profile.selectFarmLocation': 'Select your farm location on the map',
     'profile.locationSelected': 'Location selected',
+    'profile.language': 'Language',
+    'profile.settings': 'Settings',
+    'profile.help': 'Help',
+    'profile.about': 'About',
+    'profile.myProfile': 'My Profile',
     'driver.uploadPhoto': 'Upload Photo',
     'driver.status': 'Status',
     'driver.online': 'Online',
@@ -107,6 +112,11 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.editProfile': 'प्रोफाइल संपादित करें',
     'profile.selectFarmLocation': 'नक्शे पर अपने खेत का स्थान चुनें',
     'profile.locationSelected': 'स्थान चयनित',
+    'profile.language': 'भाषा',
+    'profile.settings': 'सेटिंग्स',
+    'profile.help': 'मदद',
+    'profile.about': 'के बारे में',
+    'profile.myProfile': 'मेरी प्रोफ़ाइल',
     'driver.uploadPhoto': 'फोटो अपलोड करें',
     'driver.status': 'स्थिति',
     'driver.online': 'ऑनलाइन',
@@ -115,6 +125,61 @@ const translations: Record<Language, Record<string, string>> = {
     'map.searchLocation': 'स्थान खोजें...',
     'map.viewProfile': 'प्रोफाइल देखें',
     'map.book': 'बुक करें',
+  },
+  mr: {
+    'app.name': 'कृषी कनेक्ट',
+    'auth.signIn': 'साइन इन करा',
+    'auth.signUp': 'साइन अप करा',
+    'auth.email': 'ईमेल',
+    'auth.password': 'पासवर्ड',
+    'auth.forgotPassword': 'पासवर्ड विसरलात?',
+    'auth.noAccount': "खाते नाही?",
+    'auth.hasAccount': 'आधीपासूनच खाते आहे?',
+    'auth.completeProfile': 'आपली प्रोफाईल पूर्ण करा',
+    'auth.selectRole': 'आपली भूमिका निवडा',
+    'auth.farmer': 'शेतकरी',
+    'auth.driver': 'ड्रायव्हर',
+    'role.farmer': 'शेतकरी',
+    'role.driver': 'ड्रायव्हर',
+    'role.farmerDesc': 'आपल्या शेतासाठी मशिनरी बुक करा',
+    'role.driverDesc': 'मशिनरी सेवा प्रदान करा',
+    'common.continue': 'पुढे जा',
+    'common.back': 'मागे',
+    'common.cancel': 'रद्द करा',
+    'common.save': 'जतन करा',
+    'common.saved': 'जतन केले',
+    'common.saving': 'जतन करत आहे...',
+    'common.loading': 'लोड करत आहे...',
+    'common.yes': 'होय',
+    'common.no': 'नाही',
+    'common.ok': 'ठीक आहे',
+    'common.edit': 'संपादित करा',
+    'common.delete': 'हटवा',
+    'common.name': 'नाव',
+    'common.village': 'गाव',
+    'common.district': 'जिल्हा',
+    'common.phone': 'फोन नंबर',
+    'booking.acreage': 'शेताचा आकार',
+    'profile.name': 'पूर्ण नाव',
+    'profile.village': 'गाव',
+    'profile.district': 'जिल्हा',
+    'profile.state': 'राज्य',
+    'profile.editProfile': 'प्रोफाईल संपादित करा',
+    'profile.selectFarmLocation': 'नकाशावर आपल्या शेताचे स्थान निवडा',
+    'profile.locationSelected': 'स्थान निवडले',
+    'profile.language': 'भाषा',
+    'profile.settings': 'सेटिंग्ज',
+    'profile.help': 'मदत',
+    'profile.about': 'बद्दल',
+    'profile.myProfile': 'माझी प्रोफाईल',
+    'driver.uploadPhoto': 'फोटो अपलोड करा',
+    'driver.status': 'स्थिती',
+    'driver.online': 'ऑनलाईन',
+    'driver.offline': 'ऑफलाईन',
+    'map.nearbyDrivers': 'जवळपासचे ड्रायव्हर',
+    'map.searchLocation': 'स्थान शोधा...',
+    'map.viewProfile': 'प्रोफाईल पहा',
+    'map.book': 'बुक करा',
   }
 };
 
@@ -122,7 +187,7 @@ export const LanguageProvider: React.FC<{children: React.ReactNode}> = ({ childr
   // Try to get the stored language or default to English
   const [language, setLanguage] = useState<Language>(() => {
     const storedLang = localStorage.getItem('language');
-    return (storedLang === 'en' || storedLang === 'hi') ? storedLang : 'en';
+    return (storedLang === 'en' || storedLang === 'hi' || storedLang === 'mr') ? storedLang as Language : 'en';
   });
 
   // Function to translate keys

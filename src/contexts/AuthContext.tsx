@@ -64,6 +64,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             const newUserProfile: UserProfile = {
               id: user.uid,
               email: user.email || '',
+              phone: '', // Adding the required phone field with empty string default
               name: '',
               role: null, // User will select role during onboarding
               isProfileComplete: false,
@@ -155,6 +156,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         await setDoc(userRef, { 
           id: currentUser.uid,
           email: currentUser.email || '',
+          phone: '', // Adding the required phone field with empty string default
           ...data,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()

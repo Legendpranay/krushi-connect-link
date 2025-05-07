@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { 
   onAuthStateChanged, 
@@ -169,14 +168,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.log("Document created successfully");
       }
       
-      // Update local state
-      if (userProfile) {
-        const updatedProfile = { ...userProfile, ...data };
+      // Update local state immediately
+      setUserProfile(prevProfile => {
+        if (!prevProfile) return { ...data, id: currentUser.uid } as UserProfile;
+        const updatedProfile = { ...prevProfile, ...data };
         console.log("Updating local user profile state:", updatedProfile);
-        setUserProfile(updatedProfile);
-      } else {
-        console.log("No local userProfile state to update");
-      }
+        return updatedProfile;
+      });
       
       console.log("User profile updated successfully");
       return;

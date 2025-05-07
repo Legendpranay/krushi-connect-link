@@ -6,10 +6,11 @@ import { useLanguage } from '../contexts/LanguageContext';
 import UserContainer from '../components/UserContainer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { Map } from 'lucide-react';
+import AddFarmLocationModal from '@/components/profile/AddFarmLocationModal';
 
 const EditProfilePage = () => {
   const { userProfile } = useAuth();
@@ -20,6 +21,7 @@ const EditProfilePage = () => {
   const [village, setVillage] = useState(userProfile?.village || '');
   const [district, setDistrict] = useState(userProfile?.district || '');
   const [loading, setLoading] = useState(false);
+  const [addLocationModalOpen, setAddLocationModalOpen] = useState(false);
 
   useEffect(() => {
     if (userProfile) {
@@ -130,6 +132,32 @@ const EditProfilePage = () => {
             </Button>
           </div>
         </form>
+
+        {/* Farm Locations section (only for farmers) */}
+        {userProfile?.role === 'farmer' && (
+          <div className="mt-8">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Farm Locations</h3>
+              <Button 
+                size="sm"
+                onClick={() => setAddLocationModalOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <Map className="h-4 w-4" />
+                Add Location
+              </Button>
+            </div>
+            
+            <p className="text-sm text-gray-500 mt-2">
+              Add multiple farm locations to easily book services for different fields
+            </p>
+            
+            <AddFarmLocationModal 
+              open={addLocationModalOpen}
+              onOpenChange={setAddLocationModalOpen}
+            />
+          </div>
+        )}
       </div>
     </UserContainer>
   );

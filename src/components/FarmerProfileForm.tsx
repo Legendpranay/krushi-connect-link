@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../lib/firebase';
-import LocationMap from './map/LocationMap';
+import LeafletMap from './map/LeafletMap';
+import { GeoPoint } from '../types';
 
 const FarmerProfileForm = () => {
   const { userProfile, updateUserProfile } = useAuth();
@@ -24,11 +25,9 @@ const FarmerProfileForm = () => {
     farmSize: userProfile?.farmSize || 0,
   });
   
-  const [selectedLocation, setSelectedLocation] = useState<{
-    latitude: number;
-    longitude: number;
-    address: string;
-  } | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<GeoPoint | null>(
+    userProfile?.farmLocation || null
+  );
   
   const [profileImage, setProfileImage] = useState<File | null>(null);
 
@@ -46,61 +45,98 @@ const FarmerProfileForm = () => {
     }
   };
 
-  const handleLocationSelect = (location: { latitude: number; longitude: number; address: string }) => {
+  const handleLocationSelect = (location: GeoPoint) => {
+    console.log("Location selected:", location);
     setSelectedLocation(location);
-    // Extract village from address if possible
-    const addressParts = location.address.split(',');
-    if (addressParts.length >= 2) {
-      const possibleVillage = addressParts[0].trim();
-      setFormData(prev => ({
-        ...prev,
-        village: prev.village || possibleVillage
-      }));
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent multiple submissions
+    if (isLoading) {
+      console.log("Form submission prevented - already loading");
+      return;
+    }
+    
     setIsLoading(true);
+    console.log('Farmer profile form submission started');
     
     try {
+      // Validate form data
+      if (!formData.name.trim()) {
+        toast({
+          title: 'Error',
+          description: 'Please enter your name',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (!formData.village.trim() || !formData.district.trim() || !formData.state.trim()) {
+        toast({
+          title: 'Error',
+          description: 'Please fill in all location fields',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+
       let profileImageUrl = userProfile?.profileImage || '';
       
       // Upload profile image if selected
       if (profileImage) {
-        const imageRef = ref(storage, `profile-images/${userProfile?.id}/${Date.now()}`);
-        await uploadBytes(imageRef, profileImage);
-        profileImageUrl = await getDownloadURL(imageRef);
+        console.log('Uploading profile image');
+        try {
+          const imageRef = ref(storage, `profile-images/${userProfile?.id}/${Date.now()}`);
+          await uploadBytes(imageRef, profileImage);
+          profileImageUrl = await getDownloadURL(imageRef);
+          console.log('Profile image uploaded successfully:', profileImageUrl);
+        } catch (imageError) {
+          console.error('Error uploading profile image:', imageError);
+          toast({
+            title: 'Warning',
+            description: 'Failed to upload profile image, but continuing with other data',
+            variant: 'destructive',
+          });
+        }
       }
       
-      // Prepare location data if selected
-      const farmLocation = selectedLocation ? {
-        latitude: selectedLocation.latitude,
-        longitude: selectedLocation.longitude
-      } : undefined;
-      
-      // Update user profile
-      await updateUserProfile({
+      // Prepare the data to update
+      const updateData = {
         ...formData,
         profileImage: profileImageUrl,
         isProfileComplete: true,
-        farmLocation
-      });
+        farmLocation: selectedLocation || undefined
+      };
+      
+      console.log('Updating user profile with data:', updateData);
+      
+      // Update user profile
+      await updateUserProfile(updateData);
       
       toast({
         description: 'Profile updated successfully',
       });
       
-      // Redirect to home page
-      navigate('/');
+      // Redirect to home page after a short delay
+      console.log('Scheduling redirect to home page');
+      setTimeout(() => {
+        console.log('Redirecting to home page now');
+        navigate('/');
+      }, 1000);
     } catch (error) {
-      console.error(error);
+      console.error('Error updating farmer profile:', error);
       toast({
         title: 'Error',
         description: 'Failed to update profile. Please try again.',
         variant: 'destructive',
       });
     } finally {
+      // Always reset loading state, even if there was an error
+      console.log('Resetting loading state');
       setIsLoading(false);
     }
   };
@@ -123,17 +159,6 @@ const FarmerProfileForm = () => {
             value={formData.name}
             onChange={handleChange}
             required
-          />
-        </div>
-        
-        {/* Location Map */}
-        <div className="form-input-group">
-          <label className="form-label mb-2">
-            Select your farm location*
-          </label>
-          <LocationMap 
-            onLocationSelect={handleLocationSelect}
-            height="300px"
           />
         </div>
         
@@ -195,6 +220,31 @@ const FarmerProfileForm = () => {
           />
         </div>
         
+        {/* Farm Location Map */}
+        <div className="form-input-group">
+          <label className="form-label mb-2">
+            {t('profile.selectFarmLocation')}
+          </label>
+          <div className="h-[300px] border rounded-md overflow-hidden">
+            <LeafletMap
+              center={selectedLocation || {latitude: 20.5937, longitude: 78.9629}} // Default to center of India
+              zoom={selectedLocation ? 13 : 5}
+              onMapClick={handleLocationSelect}
+              markers={selectedLocation ? [
+                {
+                  position: selectedLocation,
+                  popup: "Your Farm Location"
+                }
+              ] : []}
+            />
+          </div>
+          {selectedLocation && (
+            <p className="text-sm mt-1 text-green-600">
+              Location selected at lat: {selectedLocation.latitude.toFixed(6)}, lng: {selectedLocation.longitude.toFixed(6)}
+            </p>
+          )}
+        </div>
+        
         {/* Profile Image */}
         <div className="form-input-group">
           <label htmlFor="profileImage" className="form-label">
@@ -238,7 +288,12 @@ const FarmerProfileForm = () => {
           className="w-full mt-6" 
           disabled={isLoading}
         >
-          {isLoading ? t('common.loading') : t('common.save')}
+          {isLoading ? (
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div>
+              {t('common.saving')}
+            </div>
+          ) : t('common.save')}
         </Button>
       </form>
     </div>

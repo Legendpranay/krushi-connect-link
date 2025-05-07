@@ -13,27 +13,27 @@ const BottomNavigation = () => {
   const navItems = [
     {
       icon: Home,
-      label: t('bottomNav.home'),
+      label: 'Home',
       path: '/',
     },
     {
       icon: Map,
-      label: t('bottomNav.map'),
+      label: 'Map',
       path: '/map',
     },
     {
       icon: Calendar,
-      label: t('bottomNav.bookings'),
+      label: 'Bookings',
       path: '/bookings',
     },
     {
       icon: User,
-      label: t('bottomNav.profile'),
+      label: 'Profile',
       path: '/profile',
     },
     {
       icon: MoreHorizontal,
-      label: t('bottomNav.more'),
+      label: 'More',
       path: '/more',
     },
   ];

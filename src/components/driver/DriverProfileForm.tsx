@@ -170,20 +170,26 @@ const DriverProfileForm = () => {
       };
       
       console.log('Sending profile update with data:', profileData);
-      // Update user profile
-      await updateUserProfile(profileData);
       
-      console.log('Profile update successful');
-      toast({
-        description: 'Profile updated successfully. Waiting for admin verification.',
-      });
+      // Update user profile with better error handling
+      try {
+        await updateUserProfile(profileData);
+        
+        console.log('Profile update successful');
+        toast({
+          description: 'Profile updated successfully. Waiting for admin verification.',
+        });
+        
+        // Redirect to home page after a short delay
+        setTimeout(() => {
+          console.log('Redirecting to home page now');
+          navigate('/');
+        }, 2000);
+      } catch (updateError) {
+        console.error('Error in updateUserProfile:', updateError);
+        throw updateError; // Re-throw to be caught by the outer catch
+      }
       
-      // Redirect to home page after a short delay
-      console.log('Scheduling redirect to home page');
-      setTimeout(() => {
-        console.log('Redirecting to home page now');
-        navigate('/');
-      }, 1000);
     } catch (error) {
       console.error('Error updating driver profile:', error);
       toast({
@@ -201,11 +207,11 @@ const DriverProfileForm = () => {
   return (
     <div className="w-full max-w-md mx-auto p-4">
       <h2 className="text-2xl font-bold mb-6">
-        {t('auth.completeProfile')}
+        Complete Your Profile
       </h2>
       
       <form onSubmit={handleSubmit} className="space-y-4">
-        <h3 className="text-lg font-semibold">{t('profile.myProfile')}</h3>
+        <h3 className="text-lg font-semibold">My Profile</h3>
         
         <PersonalInfoSection 
           formData={formData} 
@@ -241,7 +247,7 @@ const DriverProfileForm = () => {
           className="w-full mt-8" 
           disabled={isLoading}
         >
-          {isLoading ? t('common.loading') : t('common.save')}
+          {isLoading ? 'Saving...' : 'Save Profile'}
         </Button>
       </form>
     </div>

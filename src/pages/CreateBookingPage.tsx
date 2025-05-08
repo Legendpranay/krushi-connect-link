@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
 import { db } from '../lib/firebase';
-import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp, GeoPoint as FirebaseGeoPoint } from 'firebase/firestore';
 import { DriverProfile, Equipment, Booking, GeoPoint, PaymentMethod } from '../types';
 import LocationMap from '../components/map/LocationMap';
 
@@ -161,13 +161,19 @@ const CreateBookingPage = () => {
       // Calculate total price
       const totalPrice = selectedEquipment.pricePerAcre * formData.acreage;
       
+      // Create FirebaseGeoPoint from our GeoPoint
+      const firebaseLocation = new FirebaseGeoPoint(
+        location.latitude,
+        location.longitude
+      );
+      
       // Create booking
       const bookingData: Omit<Booking, 'id'> = {
         farmerId: userProfile.id,
         driverId: driver.id,
         serviceType: selectedEquipment.name,
         equipmentId: selectedEquipment.id,
-        location: location,
+        location: firebaseLocation,
         address: formData.address,
         acreage: formData.acreage,
         pricePerAcre: selectedEquipment.pricePerAcre,

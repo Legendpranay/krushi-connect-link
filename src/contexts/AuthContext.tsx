@@ -177,6 +177,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       });
       
       console.log("User profile updated successfully");
+      
+      // Show success toast
+      toast({
+        description: "Profile updated successfully!",
+      });
+      
       return;
     } catch (error) {
       console.error("Error updating user profile:", error);

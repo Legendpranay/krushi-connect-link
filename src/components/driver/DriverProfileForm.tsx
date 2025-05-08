@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage, db } from '../../lib/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Equipment } from '../../types';
 import PersonalInfoSection from './PersonalInfoSection';
 import ProfileImageSection from './ProfileImageSection';
@@ -23,7 +23,7 @@ const DriverProfileForm = () => {
     village: userProfile?.village || '',
     district: userProfile?.district || '',
     state: userProfile?.state || '',
-    tractorType: '',
+    tractorType: userProfile?.tractorType || '',
   });
   
   const [profileImage, setProfileImage] = React.useState<File | null>(null);
@@ -32,6 +32,13 @@ const DriverProfileForm = () => {
   const [equipment, setEquipment] = React.useState<Equipment[]>([
     { id: '1', name: '', pricePerAcre: 0 }
   ]);
+
+  // Pre-populate equipment if it exists
+  React.useEffect(() => {
+    if (userProfile?.equipment && userProfile.equipment.length > 0) {
+      setEquipment(userProfile.equipment);
+    }
+  }, [userProfile]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -141,7 +148,7 @@ const DriverProfileForm = () => {
             pricePerAcre: item.pricePerAcre,
             pricePerHour: item.pricePerHour || null,
             driverId: userProfile?.id,
-            createdAt: new Date()
+            createdAt: serverTimestamp()
           });
           
           savedEquipment.push({
@@ -173,25 +180,19 @@ const DriverProfileForm = () => {
       console.log('Sending profile update with data:', profileData);
       
       // Update user profile with better error handling
-      try {
-        await updateUserProfile(profileData);
-        
-        console.log('Profile update successful');
-        toast({
-          description: 'Profile updated successfully. Waiting for admin verification.',
-        });
-        
-        // Increased delay to ensure Firebase has fully processed the update
-        setTimeout(() => {
-          console.log('Redirecting to home page now');
-          setIsLoading(false);
-          navigate('/', { replace: true });
-        }, 4000);
-      } catch (updateError) {
-        console.error('Error in updateUserProfile:', updateError);
+      await updateUserProfile(profileData);
+      console.log('Profile update successful');
+      
+      toast({
+        description: 'Profile updated successfully. Waiting for admin verification.',
+      });
+      
+      // Set a longer delay to ensure Firebase has fully processed all updates
+      setTimeout(() => {
+        console.log('Redirecting to home page now');
         setIsLoading(false);
-        throw updateError; // Re-throw to be caught by the outer catch
-      }
+        navigate('/', { replace: true });
+      }, 2000);
       
     } catch (error) {
       console.error('Error updating driver profile:', error);

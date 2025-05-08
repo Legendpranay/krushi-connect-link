@@ -14,7 +14,7 @@ import { toast } from '@/components/ui/use-toast';
 import LeafletMap from '../map/LeafletMap';
 import { useAuth } from '@/contexts/AuthContext';
 import { GeoPoint } from '@/types';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, GeoPoint as FirebaseGeoPoint } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -72,11 +72,17 @@ const AddFarmLocationModal: React.FC<AddFarmLocationModalProps> = ({
     setIsLoading(true);
 
     try {
+      // Convert our GeoPoint to Firebase GeoPoint
+      const firestoreLocation = new FirebaseGeoPoint(
+        selectedLocation.latitude,
+        selectedLocation.longitude
+      );
+      
       // Add the farm location to the farmLocations collection
       await addDoc(collection(db, 'farmLocations'), {
         userId: userProfile.id,
         name: locationName,
-        location: selectedLocation,
+        location: firestoreLocation,  // Using Firebase GeoPoint
         size: farmSize || 0,
         createdAt: serverTimestamp()
       });

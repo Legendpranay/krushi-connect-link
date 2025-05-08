@@ -2,14 +2,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useLanguage } from '../contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { UserRole } from '../types';
 
 const RoleSelectionForm = () => {
   const { updateUserProfile } = useAuth();
-  const { t } = useLanguage();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -25,20 +23,31 @@ const RoleSelectionForm = () => {
       
       // Redirect to complete profile page based on role
       if (role === 'farmer') {
-        navigate('/complete-farmer-profile');
+        toast({
+          description: 'Role selected. Please complete your profile.',
+        });
+        setTimeout(() => {
+          navigate('/complete-farmer-profile');
+        }, 1000);
       } else if (role === 'driver') {
-        navigate('/complete-driver-profile');
+        toast({
+          description: 'Role selected. Please complete your profile.',
+        });
+        setTimeout(() => {
+          navigate('/complete-driver-profile');
+        }, 1000);
       } else if (role === 'admin') {
         // Admins don't have a profile completion form, they go straight to the admin dashboard
         await updateUserProfile({
           isProfileComplete: true
         });
-        navigate('/admin');
+        toast({
+          description: 'Admin role selected. Redirecting to dashboard.',
+        });
+        setTimeout(() => {
+          navigate('/admin');
+        }, 1000);
       }
-      
-      toast({
-        description: 'Role selected successfully',
-      });
     } catch (error) {
       console.error(error);
       toast({
@@ -54,7 +63,7 @@ const RoleSelectionForm = () => {
   return (
     <div className="w-full max-w-md mx-auto p-6">
       <h2 className="text-2xl font-bold text-center mb-6">
-        {t('auth.selectRole')}
+        Select Your Role
       </h2>
       
       <div className="space-y-4">
@@ -65,7 +74,7 @@ const RoleSelectionForm = () => {
         >
           <span className="flex items-center">
             <span className="text-2xl mr-4">👨‍🌾</span>
-            <span>{t('auth.farmer')}</span>
+            <span>Farmer</span>
           </span>
         </Button>
         
@@ -77,7 +86,7 @@ const RoleSelectionForm = () => {
         >
           <span className="flex items-center">
             <span className="text-2xl mr-4">🚜</span>
-            <span>{t('auth.driver')}</span>
+            <span>Driver</span>
           </span>
         </Button>
 

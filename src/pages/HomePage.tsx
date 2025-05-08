@@ -219,7 +219,7 @@ const HomePage = () => {
       {renderCarousel()}
       
       <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-4">{t('home.welcome')}, {userProfile?.name || 'Farmer'}</h2>
+        <h2 className="text-2xl font-bold mb-4">Welcome, {userProfile?.name || 'Farmer'}</h2>
         
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-4 mb-6">
@@ -228,7 +228,7 @@ const HomePage = () => {
             className="h-24 flex flex-col items-center justify-center bg-gradient-to-br from-green-500 to-green-600"
           >
             <Calendar className="w-8 h-8 mb-2" />
-            {t('home.bookNow')}
+            Book Now
           </Button>
           
           <Button 
@@ -237,7 +237,7 @@ const HomePage = () => {
             className="h-24 flex flex-col items-center justify-center border-2 border-green-500 text-green-700"
           >
             <Map className="w-8 h-8 mb-2" />
-            {t('map.nearbyDrivers')}
+            Nearby Drivers
           </Button>
         </div>
       </div>
@@ -245,9 +245,9 @@ const HomePage = () => {
       {/* Nearby Drivers */}
       <section className="mb-8">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">{t('home.nearbyDrivers')}</h3>
+          <h3 className="text-lg font-semibold">Nearby Drivers</h3>
           <Button variant="ghost" size="sm" onClick={() => navigate('/map')}>
-            {t('home.viewAll')}
+            View All
           </Button>
         </div>
 
@@ -275,7 +275,7 @@ const HomePage = () => {
                       <p className="text-sm text-gray-500">{driver.village || 'Local Area'}</p>
                     </div>
                     <Button size="sm" onClick={() => navigate(`/driver/${driver.id}`)}>
-                      {t('map.book')}
+                      Book
                     </Button>
                   </div>
                 </CardContent>
@@ -298,7 +298,7 @@ const HomePage = () => {
       {renderCarousel()}
       
       <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-4">{t('home.welcome')}, {userProfile?.name || 'Driver'}</h2>
+        <h2 className="text-2xl font-bold mb-4">Welcome, {userProfile?.name || 'Driver'}</h2>
         
         {/* Driver Status Toggle */}
         <Card className="mb-6 shadow-md border-l-4 border-l-primary">
@@ -333,7 +333,7 @@ const HomePage = () => {
             className="h-24 flex flex-col items-center justify-center border-2 border-blue-500 text-blue-700"
           >
             <Settings className="w-8 h-8 mb-2" />
-            {t('driver.earnings')}
+            My Earnings
           </Button>
           
           <Button 
@@ -341,7 +341,7 @@ const HomePage = () => {
             className="h-24 flex flex-col items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600"
           >
             <Calendar className="w-8 h-8 mb-2" />
-            {t('driver.myServices')}
+            My Services
           </Button>
         </div>
       </div>
@@ -349,9 +349,9 @@ const HomePage = () => {
       {/* Equipment List */}
       <section className="mb-8">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">{t('driver.myServices')}</h3>
+          <h3 className="text-lg font-semibold">My Services</h3>
           <Button variant="ghost" size="sm" onClick={() => navigate('/driver-services')}>
-            {t('driver.editEquipment')}
+            Edit Equipment
           </Button>
         </div>
 
@@ -382,9 +382,9 @@ const HomePage = () => {
   const renderRecentBookings = () => (
     <section className="mb-8">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">{t('home.recentBookings')}</h3>
+        <h3 className="text-lg font-semibold">Recent Bookings</h3>
         <Button variant="ghost" size="sm" onClick={() => navigate('/bookings')}>
-          {t('home.viewAll')}
+          View All
         </Button>
       </div>
 
@@ -428,7 +428,7 @@ const HomePage = () => {
   const renderAnnouncements = () => (
     <section className="mb-8">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">{t('home.announcements')}</h3>
+        <h3 className="text-lg font-semibold">Announcements</h3>
       </div>
 
       <Card className="bg-accent/10 border-accent hover:shadow-md transition-shadow">

@@ -109,6 +109,7 @@ const FarmerProfileForm = () => {
         ...formData,
         profileImage: profileImageUrl,
         isProfileComplete: true,
+        role: 'farmer' as const,
         farmLocation: selectedLocation || undefined
       };
       
@@ -122,11 +123,11 @@ const FarmerProfileForm = () => {
       });
       
       // Redirect to home page after a short delay
-      console.log('Scheduling redirect to home page');
+      console.log('Profile saved, redirecting to home page in 2 seconds');
       setTimeout(() => {
         console.log('Redirecting to home page now');
         navigate('/');
-      }, 1000);
+      }, 2000);
     } catch (error) {
       console.error('Error updating farmer profile:', error);
       toast({
@@ -144,14 +145,14 @@ const FarmerProfileForm = () => {
   return (
     <div className="w-full max-w-md mx-auto p-4">
       <h2 className="text-2xl font-bold mb-6">
-        {t('auth.completeProfile')}
+        Complete Your Profile
       </h2>
       
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Name */}
         <div className="form-input-group">
           <label htmlFor="name" className="form-label">
-            {t('profile.name')}*
+            Full Name*
           </label>
           <Input
             id="name"
@@ -165,7 +166,7 @@ const FarmerProfileForm = () => {
         {/* Village */}
         <div className="form-input-group">
           <label htmlFor="village" className="form-label">
-            {t('profile.village')}*
+            Village*
           </label>
           <Input
             id="village"
@@ -179,7 +180,7 @@ const FarmerProfileForm = () => {
         {/* District */}
         <div className="form-input-group">
           <label htmlFor="district" className="form-label">
-            {t('profile.district')}*
+            District*
           </label>
           <Input
             id="district"
@@ -193,7 +194,7 @@ const FarmerProfileForm = () => {
         {/* State */}
         <div className="form-input-group">
           <label htmlFor="state" className="form-label">
-            {t('profile.state')}*
+            State*
           </label>
           <Input
             id="state"
@@ -207,7 +208,7 @@ const FarmerProfileForm = () => {
         {/* Farm Size */}
         <div className="form-input-group">
           <label htmlFor="farmSize" className="form-label">
-            {t('booking.acreage')} (in acres)
+            Farm Size (in acres)
           </label>
           <Input
             id="farmSize"
@@ -223,7 +224,7 @@ const FarmerProfileForm = () => {
         {/* Farm Location Map */}
         <div className="form-input-group">
           <label className="form-label mb-2">
-            {t('profile.selectFarmLocation')}
+            Select your farm location on the map
           </label>
           <div className="h-[300px] border rounded-md overflow-hidden">
             <LeafletMap
@@ -248,7 +249,7 @@ const FarmerProfileForm = () => {
         {/* Profile Image */}
         <div className="form-input-group">
           <label htmlFor="profileImage" className="form-label">
-            {t('driver.uploadPhoto')}
+            Upload Photo
           </label>
           <div className="mt-2">
             {profileImage ? (
@@ -291,9 +292,9 @@ const FarmerProfileForm = () => {
           {isLoading ? (
             <div className="flex items-center justify-center">
               <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div>
-              {t('common.saving')}
+              Saving...
             </div>
-          ) : t('common.save')}
+          ) : 'Save Profile'}
         </Button>
       </form>
     </div>

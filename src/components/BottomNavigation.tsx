@@ -2,10 +2,8 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Map, Calendar, User, MoreHorizontal } from 'lucide-react';
-import { useLanguage } from '../contexts/LanguageContext';
 
 const BottomNavigation = () => {
-  const { t } = useLanguage();
   const location = useLocation();
   const currentPath = location.pathname;
 
@@ -49,12 +47,12 @@ const BottomNavigation = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`bottom-nav-item ${
+                className={`flex flex-col items-center justify-center flex-1 ${
                   isActive ? 'text-primary-500' : 'text-gray-500'
                 }`}
               >
-                <item.icon className="bottom-nav-icon" />
-                <span className="bottom-nav-text">{item.label}</span>
+                <item.icon className="w-6 h-6" />
+                <span className="text-xs mt-1">{item.label}</span>
               </Link>
             );
           })}

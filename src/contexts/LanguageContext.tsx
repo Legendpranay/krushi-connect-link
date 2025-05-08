@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 // Available languages
-type Language = 'en' | 'hi' | 'mr';
+export type Language = 'en' | 'hi' | 'mr';
 
 // Context type definition
 interface LanguageContextType {
@@ -67,6 +67,9 @@ const translations: Record<Language, Record<string, string>> = {
     'driver.status': 'Status',
     'driver.online': 'Online',
     'driver.offline': 'Offline',
+    'driver.earnings': 'My Earnings',
+    'driver.myServices': 'My Services',
+    'driver.editEquipment': 'Edit Equipment',
     'map.nearbyDrivers': 'Nearby Drivers',
     'map.searchLocation': 'Search location...',
     'map.viewProfile': 'View Profile',
@@ -76,6 +79,12 @@ const translations: Record<Language, Record<string, string>> = {
     'bottomNav.bookings': 'Bookings',
     'bottomNav.profile': 'Profile',
     'bottomNav.more': 'More',
+    'welcome': 'Welcome',
+    'nearbyDrivers': 'Nearby Drivers',
+    'viewAll': 'View All',
+    'recentBookings': 'Recent Bookings',
+    'announcements': 'Announcements',
+    'bookNow': 'Book Now',
   },
   hi: {
     'app.name': 'कृषि कनेक्ट',
@@ -210,7 +219,7 @@ export const LanguageProvider: React.FC<{children: React.ReactNode}> = ({ childr
 
   // Function to translate keys
   const t = (key: string): string => {
-    return translations[language][key] || key;
+    return translations[language][key] || key.split('.').pop() || key;
   };
 
   // Save language preference to localStorage

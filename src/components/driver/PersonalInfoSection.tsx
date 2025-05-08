@@ -19,7 +19,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({ formData, han
       {/* Name */}
       <div className="form-input-group">
         <label htmlFor="name" className="form-label">
-          {t('profile.name')}*
+          Full Name*
         </label>
         <Input
           id="name"
@@ -33,7 +33,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({ formData, han
       {/* Village */}
       <div className="form-input-group">
         <label htmlFor="village" className="form-label">
-          {t('profile.village')}*
+          Village*
         </label>
         <Input
           id="village"
@@ -47,7 +47,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({ formData, han
       {/* District */}
       <div className="form-input-group">
         <label htmlFor="district" className="form-label">
-          {t('profile.district')}*
+          District*
         </label>
         <Input
           id="district"
@@ -61,7 +61,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({ formData, han
       {/* State */}
       <div className="form-input-group">
         <label htmlFor="state" className="form-label">
-          {t('profile.state')}*
+          State*
         </label>
         <Input
           id="state"

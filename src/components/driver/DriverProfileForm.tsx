@@ -2,7 +2,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { useLanguage } from '../../contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -16,7 +15,6 @@ import EquipmentSection from './EquipmentSection';
 
 const DriverProfileForm = () => {
   const { userProfile, updateUserProfile } = useAuth();
-  const { t } = useLanguage();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = React.useState(false);
   
@@ -184,7 +182,7 @@ const DriverProfileForm = () => {
         setTimeout(() => {
           console.log('Redirecting to home page now');
           navigate('/');
-        }, 2000);
+        }, 3000);
       } catch (updateError) {
         console.error('Error in updateUserProfile:', updateError);
         throw updateError; // Re-throw to be caught by the outer catch
@@ -216,14 +214,14 @@ const DriverProfileForm = () => {
         <PersonalInfoSection 
           formData={formData} 
           handleChange={handleChange} 
-          t={t} 
+          t={(key) => key.split('.').pop() || key} 
         />
         
         <ProfileImageSection 
           profileImage={profileImage} 
           setProfileImage={setProfileImage} 
-          userProfile={userProfile} 
-          t={t} 
+          userProfile={userProfile}
+          t={(key) => key.split('.').pop() || key}
         />
         
         <TractorDetailsSection 
@@ -233,13 +231,13 @@ const DriverProfileForm = () => {
           setTractorImage={setTractorImage}
           licenseImage={licenseImage}
           setLicenseImage={setLicenseImage}
-          t={t}
+          t={(key) => key.split('.').pop() || key}
         />
         
         <EquipmentSection 
           equipment={equipment}
           setEquipment={setEquipment}
-          t={t}
+          t={(key) => key.split('.').pop() || key}
         />
         
         <Button 

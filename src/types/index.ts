@@ -1,149 +1,89 @@
+import { GeoPoint as FirebaseGeoPoint } from 'firebase/firestore';
 
 export type UserRole = 'farmer' | 'driver' | 'admin';
 
-export type Language = 'en' | 'hi' | 'mr';
-
 export interface UserProfile {
   id: string;
+  email: string;
+  name: string;
   phone: string;
-  email?: string;
-  name?: string;
   role: UserRole | null;
+  isProfileComplete: boolean;
+  createdAt: Date;
+  updatedAt?: Date;
+  // Common fields
   village?: string;
   district?: string;
   state?: string;
   profileImage?: string;
-  isProfileComplete: boolean;
-  createdAt: Date;
-  language?: Language;
-  // Driver-specific properties
+  farmLocation?: GeoPoint;
+  isActive?: boolean;
+  // Farmer fields
+  farmSize?: number;
+  // Driver fields
+  tractorType?: string;
   tractorImage?: string;
   licenseImage?: string;
-  tractorType?: string;
-  isVerified?: boolean;
-  isActive?: boolean;  // Whether driver is online and available
-  rating?: number;
-  totalRatings?: number;
   equipment?: Equipment[];
-  // Farmer-specific properties
-  farmSize?: number;
-  farmLocation?: GeoPoint;
-  location?: GeoPoint;
-  preferredPaymentMethod?: PaymentMethod;
 }
 
 export interface DriverProfile extends UserProfile {
-  role: 'driver';
-  tractorType?: string;
-  tractorImage?: string;
-  licenseImage?: string;
+  tractorType: string;
+  tractorImage: string;
+  licenseImage: string;
   equipment: Equipment[];
-  isVerified: boolean;
   isActive: boolean;
-  rating?: number;
-  totalRatings?: number;
-  reviews?: Review[];
-  location?: GeoPoint;
 }
 
-export interface FarmerProfile extends UserProfile {
-  role: 'farmer';
-  farmSize?: number; // in acres
-  farmLocation?: GeoPoint;
-  preferredPaymentMethod?: PaymentMethod;
-  rating?: number;
-  totalRatings?: number;
+export interface GeoPoint {
+  latitude: number;
+  longitude: number;
 }
 
-export interface AdminProfile extends UserProfile {
-  role: 'admin';
-  permissions: string[];
-}
-
-export type Equipment = {
+export interface Equipment {
   id: string;
   name: string;
   pricePerAcre: number;
-  pricePerHour?: number;
-};
-
-export type GeoPoint = {
-  latitude: number;
-  longitude: number;
-};
-
-export type PaymentMethod = 'razorpay' | 'cash' | 'later';
-
-export type BookingStatus = 
-  | 'requested' 
-  | 'accepted' 
-  | 'rejected' 
-  | 'completed' 
-  | 'canceled'
-  | 'in_progress'
-  | 'awaiting_payment';
+  pricePerHour?: number | null;
+}
 
 export interface Booking {
   id: string;
   farmerId: string;
   driverId: string;
   serviceType: string;
-  equipmentId: string;
-  location: GeoPoint;
-  address: string;
   acreage: number;
-  pricePerAcre: number;
-  totalPrice: number;
-  status: BookingStatus;
-  paymentMethod: PaymentMethod;
-  paymentStatus: 'paid' | 'pending' | 'failed';
-  paymentDueDate?: Date;
+  location: FirebaseGeoPoint;
   requestedTime: Date;
-  scheduledTime?: Date;
-  completedTime?: Date;
-  farmerRating?: number;
-  driverRating?: number;
-  farmerFeedback?: string;
-  driverFeedback?: string;
+  status: 'requested' | 'accepted' | 'in_progress' | 'completed' | 'cancelled' | 'awaiting_payment';
   createdAt: Date;
-  updatedAt: Date;
-  reminderCount?: number;
-  lastReminderSent?: Date;
-  paymentDate?: Date;
-  paymentId?: string;
+  updatedAt?: Date;
 }
 
-export interface Review {
+export interface ChatMessage {
   id: string;
-  fromUserId: string;
-  toUserId: string;
-  bookingId: string;
-  rating: number;
-  comment?: string;
-  createdAt: Date;
-}
-
-export interface PaymentReminder {
-  id: string;
-  bookingId: string;
-  farmerId: string;
-  driverId: string;
-  amount: number;
-  dueDate: Date;
-  status: 'pending' | 'sent' | 'paid';
-  lastReminderSent?: Date;
-  reminderCount: number;
-  createdAt: Date;
-  updatedAt: Date;
+  senderId: string;
+  text: string;
+  timestamp: Date;
 }
 
 export interface Notification {
   id: string;
   userId: string;
-  title: string;
-  body: string;
-  type: 'booking' | 'payment' | 'system' | 'chat';
-  relatedId?: string; // ID of related entity (booking, payment, etc.)
+  type: 'booking_request' | 'booking_update' | 'general';
+  message: string;
+  timestamp: Date;
   isRead: boolean;
-  createdAt: Date;
 }
+
+export interface Review {
+  id: string;
+  bookingId: string;
+  driverId: string;
+  farmerId: string;
+  rating: number;
+  comment?: string;
+  timestamp: Date;
+}
+
+export type Language = 'en' | 'hi' | 'mr';

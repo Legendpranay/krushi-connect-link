@@ -25,7 +25,7 @@ const ProfileImageSection: React.FC<ProfileImageSectionProps> = ({
   return (
     <div className="form-input-group">
       <label htmlFor="profileImage" className="form-label">
-        {t('driver.uploadPhoto')}
+        Upload Photo
       </label>
       <div className="mt-2">
         {profileImage ? (

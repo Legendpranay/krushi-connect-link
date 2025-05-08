@@ -122,12 +122,17 @@ const FarmerProfileForm = () => {
         description: 'Profile updated successfully',
       });
       
-      // Redirect to home page after a short delay
-      console.log('Profile saved, redirecting to home page in 2 seconds');
+      console.log('Profile saved, redirecting to home page in 4 seconds');
+      
+      // Show loading indicator while waiting to redirect
+      setIsLoading(true);
+      
+      // Increased delay to ensure Firebase has fully processed the update
       setTimeout(() => {
         console.log('Redirecting to home page now');
-        navigate('/');
-      }, 2000);
+        setIsLoading(false);
+        navigate('/', { replace: true });
+      }, 4000);
     } catch (error) {
       console.error('Error updating farmer profile:', error);
       toast({
@@ -135,9 +140,6 @@ const FarmerProfileForm = () => {
         description: 'Failed to update profile. Please try again.',
         variant: 'destructive',
       });
-    } finally {
-      // Always reset loading state, even if there was an error
-      console.log('Resetting loading state');
       setIsLoading(false);
     }
   };

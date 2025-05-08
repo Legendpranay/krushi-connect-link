@@ -10,52 +10,45 @@ interface ProfileImageSectionProps {
   t: (key: string) => string;
 }
 
-const ProfileImageSection: React.FC<ProfileImageSectionProps> = ({ 
-  profileImage, 
-  setProfileImage, 
-  userProfile, 
-  t 
-}) => {
-  const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+const ProfileImageSection = ({ profileImage, setProfileImage, userProfile, t }: ProfileImageSectionProps) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setProfileImage(e.target.files[0]);
     }
   };
 
   return (
-    <div className="form-input-group">
-      <label htmlFor="profileImage" className="form-label">
-        Upload Photo
+    <div className="form-group">
+      <label className="block text-gray-700 mb-2">
+        Profile Photo
       </label>
-      <div className="mt-2">
+      <div className="flex flex-col items-center mb-4">
         {profileImage ? (
-          <div className="relative h-24 w-24 rounded-full overflow-hidden mx-auto">
-            <img
-              src={URL.createObjectURL(profileImage)}
-              alt="Profile Preview"
-              className="h-full w-full object-cover"
+          <div className="w-32 h-32 rounded-full overflow-hidden mb-4">
+            <img 
+              src={URL.createObjectURL(profileImage)} 
+              alt="Profile preview" 
+              className="w-full h-full object-cover"
             />
           </div>
         ) : userProfile?.profileImage ? (
-          <div className="relative h-24 w-24 rounded-full overflow-hidden mx-auto">
-            <img
-              src={userProfile.profileImage}
-              alt="Current Profile"
-              className="h-full w-full object-cover"
+          <div className="w-32 h-32 rounded-full overflow-hidden mb-4">
+            <img 
+              src={userProfile.profileImage} 
+              alt="Current profile" 
+              className="w-full h-full object-cover"
             />
           </div>
         ) : (
-          <div className="h-24 w-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto">
-            <span className="text-gray-500 text-4xl">👤</span>
+          <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center mb-4">
+            <span className="text-5xl text-gray-400">👤</span>
           </div>
         )}
-        
-        <Input
-          id="profileImage"
+        <Input 
           type="file"
+          id="profileImage"
           accept="image/*"
-          onChange={handleProfileImageChange}
-          className="mt-2"
+          onChange={handleImageChange}
         />
       </div>
     </div>

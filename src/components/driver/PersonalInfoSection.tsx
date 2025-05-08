@@ -9,66 +9,70 @@ interface PersonalInfoSectionProps {
     district: string;
     state: string;
   };
-  handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   t: (key: string) => string;
 }
 
-const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({ formData, handleChange, t }) => {
+const PersonalInfoSection = ({ formData, handleChange, t }: PersonalInfoSectionProps) => {
   return (
     <>
       {/* Name */}
-      <div className="form-input-group">
-        <label htmlFor="name" className="form-label">
+      <div className="form-group">
+        <label htmlFor="name" className="block text-gray-700 mb-1">
           Full Name*
         </label>
-        <Input
-          id="name"
-          name="name"
+        <Input 
+          id="name" 
+          name="name" 
           value={formData.name}
-          onChange={handleChange}
-          required
+          onChange={handleChange} 
+          required 
+          className="w-full"
         />
       </div>
-      
+
       {/* Village */}
-      <div className="form-input-group">
-        <label htmlFor="village" className="form-label">
+      <div className="form-group">
+        <label htmlFor="village" className="block text-gray-700 mb-1">
           Village*
         </label>
-        <Input
-          id="village"
-          name="village"
+        <Input 
+          id="village" 
+          name="village" 
           value={formData.village}
-          onChange={handleChange}
-          required
+          onChange={handleChange} 
+          required 
+          className="w-full"
         />
       </div>
-      
+
       {/* District */}
-      <div className="form-input-group">
-        <label htmlFor="district" className="form-label">
+      <div className="form-group">
+        <label htmlFor="district" className="block text-gray-700 mb-1">
           District*
         </label>
-        <Input
-          id="district"
-          name="district"
+        <Input 
+          id="district" 
+          name="district" 
           value={formData.district}
-          onChange={handleChange}
-          required
+          onChange={handleChange} 
+          required 
+          className="w-full"
         />
       </div>
-      
+
       {/* State */}
-      <div className="form-input-group">
-        <label htmlFor="state" className="form-label">
+      <div className="form-group">
+        <label htmlFor="state" className="block text-gray-700 mb-1">
           State*
         </label>
-        <Input
-          id="state"
-          name="state"
+        <Input 
+          id="state" 
+          name="state" 
           value={formData.state}
-          onChange={handleChange}
-          required
+          onChange={handleChange} 
+          required 
+          className="w-full"
         />
       </div>
     </>

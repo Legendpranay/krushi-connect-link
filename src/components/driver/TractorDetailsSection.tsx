@@ -6,7 +6,7 @@ interface TractorDetailsSectionProps {
   formData: {
     tractorType: string;
   };
-  handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   tractorImage: File | null;
   setTractorImage: React.Dispatch<React.SetStateAction<File | null>>;
   licenseImage: File | null;
@@ -14,97 +14,102 @@ interface TractorDetailsSectionProps {
   t: (key: string) => string;
 }
 
-const TractorDetailsSection: React.FC<TractorDetailsSectionProps> = ({
-  formData,
-  handleChange,
-  tractorImage,
+const TractorDetailsSection = ({ 
+  formData, 
+  handleChange, 
+  tractorImage, 
   setTractorImage,
   licenseImage,
   setLicenseImage,
-  t
-}) => {
+  t 
+}: TractorDetailsSectionProps) => {
+  
   const handleTractorImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setTractorImage(e.target.files[0]);
     }
   };
-
+  
   const handleLicenseImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setLicenseImage(e.target.files[0]);
     }
   };
-
+  
   return (
     <>
-      <h3 className="text-lg font-semibold mt-8">{t('driver.tractorDetails')}</h3>
+      <h3 className="text-lg font-semibold mt-6 mb-2">Tractor Details</h3>
       
       {/* Tractor Type */}
-      <div className="form-input-group">
-        <label htmlFor="tractorType" className="form-label">
-          {t('driver.tractorType')}*
+      <div className="form-group mb-4">
+        <label htmlFor="tractorType" className="block text-gray-700 mb-1">
+          Tractor Type*
         </label>
-        <Input
-          id="tractorType"
-          name="tractorType"
+        <Input 
+          id="tractorType" 
+          name="tractorType" 
           value={formData.tractorType}
-          onChange={handleChange}
-          required
+          onChange={handleChange} 
+          required 
+          className="w-full"
+          placeholder="e.g. John Deere 5045D"
         />
       </div>
-      
+
       {/* Tractor Image */}
-      <div className="form-input-group">
-        <label htmlFor="tractorImage" className="form-label">
-          {t('driver.tractorPhoto')}*
+      <div className="form-group mb-4">
+        <label htmlFor="tractorImage" className="block text-gray-700 mb-1">
+          Tractor Photo*
         </label>
-        <div className="mt-2">
+        <div className="mb-2">
           {tractorImage && (
-            <div className="relative h-36 w-full rounded overflow-hidden">
-              <img
-                src={URL.createObjectURL(tractorImage)}
-                alt="Tractor Preview"
-                className="h-full w-full object-cover"
+            <div className="rounded-md overflow-hidden mb-2 max-h-40">
+              <img 
+                src={URL.createObjectURL(tractorImage)} 
+                alt="Tractor preview" 
+                className="w-full object-cover"
               />
             </div>
           )}
-          
-          <Input
-            id="tractorImage"
-            type="file"
-            accept="image/*"
-            onChange={handleTractorImageChange}
-            className="mt-2"
-            required
-          />
         </div>
+        <Input 
+          type="file"
+          id="tractorImage"
+          accept="image/*"
+          onChange={handleTractorImageChange}
+          required
+        />
+        <p className="text-sm text-muted-foreground mt-1">
+          Upload a clear photo of your tractor
+        </p>
       </div>
-      
-      {/* License Image */}
-      <div className="form-input-group">
-        <label htmlFor="licenseImage" className="form-label">
-          {t('driver.drivingLicense')}*
+
+      {/* Driving License */}
+      <div className="form-group mb-4">
+        <label htmlFor="licenseImage" className="block text-gray-700 mb-1">
+          Driving License*
         </label>
-        <div className="mt-2">
+        <div className="mb-2">
           {licenseImage && (
-            <div className="relative h-36 w-full rounded overflow-hidden">
-              <img
-                src={URL.createObjectURL(licenseImage)}
-                alt="License Preview"
-                className="h-full w-full object-cover"
+            <div className="rounded-md overflow-hidden mb-2 max-h-40">
+              <img 
+                src={URL.createObjectURL(licenseImage)} 
+                alt="License preview" 
+                className="w-full object-cover"
               />
             </div>
           )}
-          
-          <Input
-            id="licenseImage"
-            type="file"
-            accept="image/*"
-            onChange={handleLicenseImageChange}
-            className="mt-2"
-            required
-          />
         </div>
+        <Input 
+          type="file"
+          id="licenseImage"
+          accept="image/*"
+          onChange={handleLicenseImageChange}
+          required
+        />
+        <p className="text-sm text-muted-foreground mt-1">
+          Upload a clear photo of your valid driving license
+        </p>
       </div>
     </>
   );

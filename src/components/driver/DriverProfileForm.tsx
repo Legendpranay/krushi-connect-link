@@ -45,10 +45,13 @@ const DriverProfileForm = () => {
     e.preventDefault();
     
     // Prevent multiple submissions
-    if (isLoading) return;
+    if (isLoading) {
+      console.log("Form submission prevented - already loading");
+      return;
+    }
     
     setIsLoading(true);
-    console.log('Form submission started');
+    console.log('Driver profile form submission started');
     
     try {
       // Validate form
@@ -178,13 +181,15 @@ const DriverProfileForm = () => {
           description: 'Profile updated successfully. Waiting for admin verification.',
         });
         
-        // Redirect to home page after a short delay
+        // Increased delay to ensure Firebase has fully processed the update
         setTimeout(() => {
           console.log('Redirecting to home page now');
-          navigate('/');
-        }, 3000);
+          setIsLoading(false);
+          navigate('/', { replace: true });
+        }, 4000);
       } catch (updateError) {
         console.error('Error in updateUserProfile:', updateError);
+        setIsLoading(false);
         throw updateError; // Re-throw to be caught by the outer catch
       }
       
@@ -195,9 +200,6 @@ const DriverProfileForm = () => {
         description: 'Failed to update profile. Please try again.',
         variant: 'destructive',
       });
-    } finally {
-      // Always reset loading state, even if there was an error
-      console.log('Resetting loading state');
       setIsLoading(false);
     }
   };
@@ -214,14 +216,14 @@ const DriverProfileForm = () => {
         <PersonalInfoSection 
           formData={formData} 
           handleChange={handleChange} 
-          t={(key) => key.split('.').pop() || key} 
+          t={(key) => key} 
         />
         
         <ProfileImageSection 
           profileImage={profileImage} 
           setProfileImage={setProfileImage} 
           userProfile={userProfile}
-          t={(key) => key.split('.').pop() || key}
+          t={(key) => key}
         />
         
         <TractorDetailsSection 
@@ -231,13 +233,13 @@ const DriverProfileForm = () => {
           setTractorImage={setTractorImage}
           licenseImage={licenseImage}
           setLicenseImage={setLicenseImage}
-          t={(key) => key.split('.').pop() || key}
+          t={(key) => key}
         />
         
         <EquipmentSection 
           equipment={equipment}
           setEquipment={setEquipment}
-          t={(key) => key.split('.').pop() || key}
+          t={(key) => key}
         />
         
         <Button 
@@ -245,7 +247,12 @@ const DriverProfileForm = () => {
           className="w-full mt-8" 
           disabled={isLoading}
         >
-          {isLoading ? 'Saving...' : 'Save Profile'}
+          {isLoading ? (
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div>
+              Saving...
+            </div>
+          ) : 'Save Profile'}
         </Button>
       </form>
     </div>

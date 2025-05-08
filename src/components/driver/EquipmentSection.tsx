@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Equipment } from '../../types';
+import { X, Plus } from 'lucide-react';
 
 interface EquipmentSectionProps {
   equipment: Equipment[];
@@ -10,101 +11,87 @@ interface EquipmentSectionProps {
   t: (key: string) => string;
 }
 
-const EquipmentSection: React.FC<EquipmentSectionProps> = ({ equipment, setEquipment, t }) => {
-  const handleEquipmentChange = (index: number, field: keyof Equipment, value: string | number) => {
+const EquipmentSection = ({ equipment, setEquipment, t }: EquipmentSectionProps) => {
+  
+  const handleEquipmentChange = (index: number, field: keyof Equipment, value: any) => {
     const updatedEquipment = [...equipment];
     updatedEquipment[index] = {
       ...updatedEquipment[index],
-      [field]: field === 'pricePerAcre' || field === 'pricePerHour' 
-        ? parseFloat(value as string) || 0 
-        : value
+      [field]: field.includes('price') ? Number(value) : value
     };
     setEquipment(updatedEquipment);
   };
 
   const addEquipmentField = () => {
-    setEquipment([
-      ...equipment,
-      { id: `${equipment.length + 1}`, name: '', pricePerAcre: 0 }
-    ]);
+    setEquipment([...equipment, {
+      id: `new-${Date.now()}`,
+      name: '',
+      pricePerAcre: 0
+    }]);
   };
 
   const removeEquipmentField = (index: number) => {
-    if (equipment.length > 1) {
-      setEquipment(equipment.filter((_, i) => i !== index));
-    }
+    const updatedEquipment = [...equipment];
+    updatedEquipment.splice(index, 1);
+    setEquipment(updatedEquipment);
   };
 
   return (
     <>
-      <h3 className="text-lg font-semibold mt-8">{t('driver.myServices')}</h3>
+      <h3 className="text-lg font-semibold mt-6 mb-2">Equipment & Services</h3>
       
-      {/* Equipment List */}
-      {equipment.map((item, index) => (
-        <div key={index} className="p-4 border rounded-md">
-          <div className="form-input-group">
-            <label htmlFor={`equipment-name-${index}`} className="form-label">
-              {t('driver.equipmentName')}*
-            </label>
-            <Input
-              id={`equipment-name-${index}`}
-              value={item.name}
-              onChange={(e) => handleEquipmentChange(index, 'name', e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="form-input-group">
-            <label htmlFor={`equipment-price-${index}`} className="form-label">
-              {t('driver.pricePerAcre')}*
-            </label>
-            <Input
-              id={`equipment-price-${index}`}
-              type="number"
-              min="0"
-              step="10"
-              value={item.pricePerAcre}
-              onChange={(e) => handleEquipmentChange(index, 'pricePerAcre', e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="form-input-group">
-            <label htmlFor={`equipment-hour-price-${index}`} className="form-label">
-              {t('driver.pricePerHour')} ({t('common.optional')})
-            </label>
-            <Input
-              id={`equipment-hour-price-${index}`}
-              type="number"
-              min="0"
-              step="10"
-              value={item.pricePerHour || ''}
-              onChange={(e) => handleEquipmentChange(index, 'pricePerHour', e.target.value)}
-            />
-          </div>
-          
-          {equipment.length > 1 && (
-            <Button
-              type="button"
-              variant="destructive"
-              size="sm"
+      <div className="space-y-4">
+        {equipment.map((item, index) => (
+          <div key={item.id} className="flex space-x-2 items-end">
+            <div className="flex-1">
+              <label className="block text-gray-700 text-sm mb-1">
+                Equipment/Service*
+              </label>
+              <Input 
+                value={item.name}
+                onChange={(e) => handleEquipmentChange(index, 'name', e.target.value)}
+                placeholder="e.g. Plowing, Sowing"
+                required
+              />
+            </div>
+            
+            <div className="w-1/3">
+              <label className="block text-gray-700 text-sm mb-1">
+                Price/Acre (₹)*
+              </label>
+              <Input 
+                type="number"
+                value={item.pricePerAcre}
+                onChange={(e) => handleEquipmentChange(index, 'pricePerAcre', e.target.value)}
+                min={0}
+                required
+              />
+            </div>
+            
+            <Button 
+              type="button" 
+              variant="ghost" 
+              size="icon"
               onClick={() => removeEquipmentField(index)}
-              className="mt-2"
+              disabled={equipment.length <= 1}
+              className="mb-0.5"
             >
-              Remove
+              <X className="h-4 w-4" />
             </Button>
-          )}
-        </div>
-      ))}
-      
-      <Button
-        type="button"
-        variant="outline"
-        onClick={addEquipmentField}
-        className="w-full"
-      >
-        + {t('driver.addEquipment')}
-      </Button>
+          </div>
+        ))}
+        
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={addEquipmentField}
+          className="mt-2 w-full"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add More Equipment
+        </Button>
+      </div>
     </>
   );
 };

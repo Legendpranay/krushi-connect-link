@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -5,7 +6,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import UserContainer from '../components/UserContainer';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-import { Map, Calendar, User, Settings } from 'lucide-react';
+import { Map, Calendar, User, Settings, WalletCards, TrendingUp } from 'lucide-react';
 import { collection, query, where, limit, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { DriverProfile, Booking } from '../types';
@@ -46,6 +47,8 @@ const HomePage = () => {
   const [recentBookings, setRecentBookings] = useState<Booking[]>([]);
   const [isOnline, setIsOnline] = useState(userProfile?.isActive || false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [pendingEarnings, setPendingEarnings] = useState(0);
 
   // Update online status when userProfile changes
   useEffect(() => {
@@ -130,6 +133,21 @@ const HomePage = () => {
         });
         
         setRecentBookings(bookings);
+
+        // Calculate earnings if user is a driver
+        if (userProfile.role === 'driver') {
+          // Calculate earnings stats - always default to 0
+          const total = bookings
+            .filter(booking => booking.status === 'completed' || booking.status === 'awaiting_payment')
+            .reduce((sum, booking) => sum + (booking.totalPrice || 0), 0);
+          
+          const pending = bookings
+            .filter(booking => booking.paymentStatus === 'pending')
+            .reduce((sum, booking) => sum + (booking.totalPrice || 0), 0);
+          
+          setTotalEarnings(total);
+          setPendingEarnings(pending);
+        }
 
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -324,6 +342,30 @@ const HomePage = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Earnings Summary */}
+        <Card className="mb-6 shadow-md border-l-4 border-l-green-500">
+          <CardContent className="p-4">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-semibold text-lg">Earnings Summary</h3>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/driver-earnings')}>
+                View Details
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-4 mt-3">
+              <div className="flex flex-col items-center p-3 bg-muted/20 rounded-lg">
+                <WalletCards className="h-6 w-6 text-primary mb-1" />
+                <span className="text-sm text-muted-foreground">Total</span>
+                <span className="text-lg font-semibold">₹{totalEarnings}</span>
+              </div>
+              <div className="flex flex-col items-center p-3 bg-muted/20 rounded-lg">
+                <TrendingUp className="h-6 w-6 text-amber-500 mb-1" />
+                <span className="text-sm text-muted-foreground">Pending</span>
+                <span className="text-lg font-semibold text-amber-600">₹{pendingEarnings}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-4 mb-6">
@@ -332,7 +374,7 @@ const HomePage = () => {
             variant="outline"
             className="h-24 flex flex-col items-center justify-center border-2 border-blue-500 text-blue-700"
           >
-            <Settings className="w-8 h-8 mb-2" />
+            <WalletCards className="w-8 h-8 mb-2" />
             My Earnings
           </Button>
           
@@ -340,7 +382,7 @@ const HomePage = () => {
             onClick={() => navigate('/driver-services')}
             className="h-24 flex flex-col items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600"
           >
-            <Calendar className="w-8 h-8 mb-2" />
+            <Settings className="w-8 h-8 mb-2" />
             My Services
           </Button>
         </div>
@@ -357,21 +399,23 @@ const HomePage = () => {
 
         <Card className="shadow-sm mb-6 hover:shadow-md transition-shadow">
           <CardContent className="p-4">
-            <ul className="divide-y">
-              {/* Sample equipment - in a real app, this would come from the user profile */}
-              <li className="py-3 flex justify-between">
-                <span>Plowing</span>
-                <span className="font-medium">₹700/acre</span>
-              </li>
-              <li className="py-3 flex justify-between">
-                <span>Sowing</span>
-                <span className="font-medium">₹500/acre</span>
-              </li>
-              <li className="py-3 flex justify-between">
-                <span>Transport</span>
-                <span className="font-medium">₹600/hour</span>
-              </li>
-            </ul>
+            {userProfile?.equipment && userProfile.equipment.length > 0 ? (
+              <ul className="divide-y">
+                {userProfile.equipment.map((item) => (
+                  <li key={item.id} className="py-3 flex justify-between">
+                    <span>{item.name}</span>
+                    <span className="font-medium">₹{item.pricePerAcre}/acre</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-center p-4 text-muted-foreground">
+                <p>No services added yet</p>
+                <Button variant="link" onClick={() => navigate('/driver-services')}>
+                  Add your services
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </section>

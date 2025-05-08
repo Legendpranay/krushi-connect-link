@@ -1,3 +1,4 @@
+
 import { GeoPoint as FirebaseGeoPoint } from 'firebase/firestore';
 
 export type UserRole = 'farmer' | 'driver' | 'admin';
@@ -25,6 +26,10 @@ export interface UserProfile {
   tractorImage?: string;
   licenseImage?: string;
   equipment?: Equipment[];
+  location?: GeoPoint;
+  rating?: number;
+  totalRatings?: number;
+  isVerified?: boolean;
 }
 
 export interface DriverProfile extends UserProfile {
@@ -33,6 +38,15 @@ export interface DriverProfile extends UserProfile {
   licenseImage: string;
   equipment: Equipment[];
   isActive: boolean;
+  location?: GeoPoint;
+  rating?: number;
+  totalRatings?: number;
+  isVerified?: boolean;
+}
+
+export interface FarmerProfile extends UserProfile {
+  farmSize: number;
+  farmLocation?: GeoPoint;
 }
 
 export interface GeoPoint {
@@ -47,15 +61,32 @@ export interface Equipment {
   pricePerHour?: number | null;
 }
 
+export type BookingStatus = 'requested' | 'accepted' | 'in_progress' | 'completed' | 'canceled' | 'rejected' | 'awaiting_payment' | 'cancelled';
+
+export type PaymentMethod = 'cash' | 'later' | 'online';
+
+export type PaymentStatus = 'pending' | 'paid' | 'failed';
+
 export interface Booking {
   id: string;
   farmerId: string;
   driverId: string;
   serviceType: string;
+  equipmentId?: string;
   acreage: number;
   location: FirebaseGeoPoint;
+  address: string;
   requestedTime: Date;
-  status: 'requested' | 'accepted' | 'in_progress' | 'completed' | 'cancelled' | 'awaiting_payment';
+  scheduledTime?: Date;
+  completedTime?: Date;
+  status: BookingStatus;
+  paymentStatus: PaymentStatus;
+  paymentMethod: PaymentMethod;
+  paymentDueDate?: Date;
+  pricePerAcre: number;
+  totalPrice: number;
+  reminderCount?: number;
+  lastReminderSent?: Date;
   createdAt: Date;
   updatedAt?: Date;
 }
@@ -67,23 +98,27 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
+export type NotificationType = 'booking_request' | 'booking_update' | 'payment' | 'chat' | 'system' | 'general';
+
 export interface Notification {
   id: string;
   userId: string;
-  type: 'booking_request' | 'booking_update' | 'general';
-  message: string;
-  timestamp: Date;
+  title: string;
+  body: string;
+  type: NotificationType;
+  relatedId?: string;
   isRead: boolean;
+  createdAt: Date;
 }
 
 export interface Review {
   id: string;
   bookingId: string;
-  driverId: string;
-  farmerId: string;
+  toUserId: string;
+  fromUserId: string;
   rating: number;
   comment?: string;
-  timestamp: Date;
+  createdAt: Date;
 }
 
 export type Language = 'en' | 'hi' | 'mr';

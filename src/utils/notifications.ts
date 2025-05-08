@@ -1,14 +1,14 @@
 
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Notification, Booking, UserProfile } from '../types';
+import { Notification, Booking, UserProfile, NotificationType } from '../types';
 
 // Send a notification to a user
 export const sendNotification = async (
   userId: string,
   title: string,
   body: string,
-  type: 'booking' | 'payment' | 'system' | 'chat',
+  type: NotificationType,
   relatedId?: string
 ): Promise<string> => {
   try {
@@ -71,6 +71,7 @@ export const sendBookingStatusNotification = async (
         : 'You have completed the service. Payment is pending.';
       break;
     case 'canceled':
+    case 'cancelled':
       title = 'Booking Canceled';
       body = recipientRole === 'farmer'
         ? 'You have canceled your booking.'
@@ -85,7 +86,7 @@ export const sendBookingStatusNotification = async (
     recipientId,
     title,
     body,
-    'booking',
+    'booking_update',
     booking.id
   );
 };

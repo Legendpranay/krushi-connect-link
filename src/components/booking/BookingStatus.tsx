@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BookingStatus as BookingStatusType } from '@/types';
+import { BookingStatus as BookingStatusType } from '../../types';
 import { Badge } from '@/components/ui/badge';
 import { cva } from 'class-variance-authority';
 
@@ -53,6 +53,7 @@ const BookingStatus: React.FC<BookingStatusProps> = ({ status }) => {
       badgeVariant = 'success';
       break;
     case 'canceled':
+    case 'cancelled':
       badgeVariant = 'destructive';
       break;
     case 'rejected':

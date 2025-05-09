@@ -179,20 +179,19 @@ const DriverProfileForm = () => {
       
       console.log('Sending profile update with data:', profileData);
       
-      // Update user profile with better error handling
+      // Update user profile
       await updateUserProfile(profileData);
       console.log('Profile update successful');
       
       toast({
-        description: 'Profile updated successfully. Waiting for admin verification.',
+        description: 'Profile updated successfully!',
       });
       
-      // Set a longer delay to ensure Firebase has fully processed all updates
-      setTimeout(() => {
-        console.log('Redirecting to home page now');
-        setIsLoading(false);
-        navigate('/', { replace: true });
-      }, 2000);
+      // Important: Make sure we reset the loading state before navigation
+      setIsLoading(false);
+      
+      // Navigate immediately to the home page after successful update
+      navigate('/', { replace: true });
       
     } catch (error) {
       console.error('Error updating driver profile:', error);

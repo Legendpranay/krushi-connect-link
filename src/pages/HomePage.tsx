@@ -6,10 +6,10 @@ import { useLanguage } from '../contexts/LanguageContext';
 import UserContainer from '../components/UserContainer';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-import { Map, Calendar, User, Settings, WalletCards, TrendingUp } from 'lucide-react';
+import { Map, Calendar, User, Settings, WalletCards, TrendingUp, MapPin } from 'lucide-react';
 import { collection, query, where, limit, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { DriverProfile, Booking } from '../types';
+import { DriverProfile, Booking, GeoPoint } from '../types';
 import { Switch } from '@/components/ui/switch';
 import { 
   Carousel,
@@ -19,6 +19,7 @@ import {
   CarouselNext,
 } from "@/components/ui/carousel";
 import { toast } from '@/components/ui/use-toast';
+import AddFarmLocationModal from '@/components/profile/AddFarmLocationModal';
 
 // Sample carousel images - replace with your own
 const carouselImages = [
@@ -39,6 +40,15 @@ const carouselImages = [
   }
 ];
 
+// Farm location type
+interface FarmLocation {
+  id: string;
+  name: string;
+  location: GeoPoint;
+  size: number;
+  createdAt: Date;
+}
+
 const HomePage = () => {
   const { userProfile, updateDriverStatus } = useAuth();
   const { t } = useLanguage();
@@ -49,6 +59,9 @@ const HomePage = () => {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [totalEarnings, setTotalEarnings] = useState(0);
   const [pendingEarnings, setPendingEarnings] = useState(0);
+  const [farmLocations, setFarmLocations] = useState<FarmLocation[]>([]);
+  const [pendingPayments, setPendingPayments] = useState<Booking[]>([]);
+  const [isAddLocationOpen, setIsAddLocationOpen] = useState(false);
 
   // Update online status when userProfile changes
   useEffect(() => {
@@ -75,6 +88,77 @@ const HomePage = () => {
     };
 
     fetchDriverStatus();
+  }, [userProfile]);
+
+  // Fetch farm locations for farmers
+  useEffect(() => {
+    const fetchFarmLocations = async () => {
+      if (!userProfile?.id || userProfile.role !== 'farmer') return;
+      
+      try {
+        const locationsRef = collection(db, 'farmLocations');
+        const q = query(locationsRef, where('userId', '==', userProfile.id));
+        const snapshot = await getDocs(q);
+        
+        const locations: FarmLocation[] = [];
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          locations.push({
+            id: doc.id,
+            name: data.name,
+            location: {
+              latitude: data.location.latitude,
+              longitude: data.location.longitude
+            },
+            size: data.size || 0,
+            createdAt: data.createdAt ? data.createdAt.toDate() : new Date()
+          });
+        });
+        
+        setFarmLocations(locations);
+      } catch (error) {
+        console.error('Error fetching farm locations:', error);
+      }
+    };
+    
+    fetchFarmLocations();
+  }, [userProfile]);
+
+  // Fetch pending payment reminders for farmers
+  useEffect(() => {
+    const fetchPendingPayments = async () => {
+      if (!userProfile?.id || userProfile.role !== 'farmer') return;
+      
+      try {
+        const bookingsRef = collection(db, 'bookings');
+        const q = query(
+          bookingsRef,
+          where('farmerId', '==', userProfile.id),
+          where('status', 'in', ['completed', 'awaiting_payment']),
+          where('paymentStatus', '==', 'pending')
+        );
+        
+        const snapshot = await getDocs(q);
+        const payments: Booking[] = [];
+        
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          payments.push({
+            id: doc.id,
+            ...data,
+            requestedTime: data.requestedTime?.toDate() || new Date(),
+            createdAt: data.createdAt?.toDate() || new Date(),
+            updatedAt: data.updatedAt?.toDate() || new Date()
+          } as Booking);
+        });
+        
+        setPendingPayments(payments);
+      } catch (error) {
+        console.error('Error fetching payment reminders:', error);
+      }
+    };
+    
+    fetchPendingPayments();
   }, [userProfile]);
 
   useEffect(() => {
@@ -239,6 +323,32 @@ const HomePage = () => {
       <div className="mb-8">
         <h2 className="text-2xl font-bold mb-4">Welcome, {userProfile?.name || 'Farmer'}</h2>
         
+        {/* Payment Reminders */}
+        {pendingPayments.length > 0 && (
+          <Card className="mb-6 shadow-md border-l-4 border-l-amber-500">
+            <CardContent className="p-4">
+              <div className="flex items-start">
+                <div className="bg-amber-100 p-2 rounded-full mr-4">
+                  <WalletCards className="h-6 w-6 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Payment Reminders</h3>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    You have {pendingPayments.length} pending payments for completed services
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => navigate('/bookings')}
+                  >
+                    View Payments
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           <Button 
@@ -259,6 +369,57 @@ const HomePage = () => {
           </Button>
         </div>
       </div>
+
+      {/* Farm Locations */}
+      <section className="mb-8">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold">My Farm Locations</h3>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setIsAddLocationOpen(true)}
+          >
+            Add Location
+          </Button>
+        </div>
+
+        {farmLocations.length > 0 ? (
+          <div className="space-y-4">
+            {farmLocations.map((location) => (
+              <Card key={location.id} className="shadow-sm hover:shadow-md transition-shadow">
+                <CardContent className="p-4">
+                  <div className="flex items-center">
+                    <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                      <MapPin className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">{location.name}</h4>
+                      <p className="text-sm text-gray-500">
+                        {location.size} acres • 
+                        Lat: {location.location.latitude.toFixed(4)}, 
+                        Lng: {location.location.longitude.toFixed(4)}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card className="bg-muted/50">
+            <CardContent className="p-6 text-center">
+              <p>No farm locations added yet</p>
+              <Button 
+                variant="link" 
+                onClick={() => setIsAddLocationOpen(true)}
+                className="mt-2"
+              >
+                Add your first farm location
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </section>
 
       {/* Nearby Drivers */}
       <section className="mb-8">
@@ -308,6 +469,45 @@ const HomePage = () => {
           </Card>
         )}
       </section>
+
+      {/* Add Farm Location Modal */}
+      <AddFarmLocationModal
+        open={isAddLocationOpen}
+        onOpenChange={setIsAddLocationOpen}
+        onSuccess={() => {
+          // Refresh farm locations after adding a new one
+          const fetchFarmLocations = async () => {
+            if (!userProfile?.id) return;
+            
+            try {
+              const locationsRef = collection(db, 'farmLocations');
+              const q = query(locationsRef, where('userId', '==', userProfile.id));
+              const snapshot = await getDocs(q);
+              
+              const locations: FarmLocation[] = [];
+              snapshot.forEach(doc => {
+                const data = doc.data();
+                locations.push({
+                  id: doc.id,
+                  name: data.name,
+                  location: {
+                    latitude: data.location.latitude,
+                    longitude: data.location.longitude
+                  },
+                  size: data.size || 0,
+                  createdAt: data.createdAt ? data.createdAt.toDate() : new Date()
+                });
+              });
+              
+              setFarmLocations(locations);
+            } catch (error) {
+              console.error('Error fetching farm locations:', error);
+            }
+          };
+          
+          fetchFarmLocations();
+        }}
+      />
     </>
   );
 

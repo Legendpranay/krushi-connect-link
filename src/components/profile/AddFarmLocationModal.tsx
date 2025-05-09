@@ -17,6 +17,7 @@ import { GeoPoint } from '@/types';
 import { collection, addDoc, serverTimestamp, GeoPoint as FirebaseGeoPoint } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { MapPin } from 'lucide-react';
 
 interface AddFarmLocationModalProps {
   open: boolean;
@@ -35,6 +36,15 @@ const AddFarmLocationModal: React.FC<AddFarmLocationModalProps> = ({
   const [locationName, setLocationName] = useState('');
   const [farmSize, setFarmSize] = useState<number>(0);
   const [selectedLocation, setSelectedLocation] = useState<GeoPoint | null>(null);
+
+  // Reset form when dialog opens
+  React.useEffect(() => {
+    if (open) {
+      setLocationName('');
+      setFarmSize(0);
+      setSelectedLocation(null);
+    }
+  }, [open]);
 
   const handleLocationSelect = (location: GeoPoint) => {
     console.log("New farm location selected:", location);
@@ -142,7 +152,13 @@ const AddFarmLocationModal: React.FC<AddFarmLocationModalProps> = ({
           </div>
           
           <div className="space-y-2">
-            <Label>Select Location</Label>
+            <div className="flex items-center justify-between mb-2">
+              <Label>Select Location</Label>
+              <div className="text-xs text-muted-foreground flex items-center">
+                <MapPin className="h-3 w-3 mr-1" />
+                Click on the map to set location
+              </div>
+            </div>
             <div className="h-[250px] border rounded-md overflow-hidden">
               <LeafletMap
                 center={selectedLocation || (userProfile?.farmLocation || {latitude: 20.5937, longitude: 78.9629})}
@@ -154,6 +170,7 @@ const AddFarmLocationModal: React.FC<AddFarmLocationModalProps> = ({
                     popup: locationName || "New Farm Location"
                   }
                 ] : []}
+                mapType="satellite" // Set map to satellite view
               />
             </div>
             {selectedLocation && (

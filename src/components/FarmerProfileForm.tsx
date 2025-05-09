@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -122,17 +121,14 @@ const FarmerProfileForm = () => {
         description: 'Profile updated successfully',
       });
       
-      console.log('Profile saved, redirecting to home page in 4 seconds');
+      console.log('Profile saved successfully');
       
-      // Show loading indicator while waiting to redirect
-      setIsLoading(true);
+      // Important: Reset loading state before navigation
+      setIsLoading(false);
       
-      // Increased delay to ensure Firebase has fully processed the update
-      setTimeout(() => {
-        console.log('Redirecting to home page now');
-        setIsLoading(false);
-        navigate('/', { replace: true });
-      }, 4000);
+      // Navigate to home page immediately after successful update
+      navigate('/', { replace: true });
+      
     } catch (error) {
       console.error('Error updating farmer profile:', error);
       toast({

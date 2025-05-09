@@ -1,149 +1,124 @@
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
-import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
-import { GeoPoint } from '@/types';
 import 'leaflet/dist/leaflet.css';
+import { GeoPoint } from '@/types';
 
-// Fix Leaflet default icon issue
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-
-const DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
+// Define marker icon
+const defaultIcon = L.icon({
+  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
   shadowSize: [41, 41]
 });
 
-// Set default icon for all markers
-L.Marker.prototype.options.icon = DefaultIcon;
-
-// Component to automatically update map view when center prop changes
-const ChangeMapView = ({ center, zoom }: { center: [number, number], zoom: number }) => {
-  const map = useMap();
-  
-  useEffect(() => {
-    map.setView(center, zoom);
-  }, [center, zoom, map]);
-  
-  return null;
-};
-
-// Component to handle map clicks
-const MapClickHandler = ({ onMapClick }: { onMapClick?: (position: GeoPoint) => void }) => {
-  const map = useMap();
-  
-  useEffect(() => {
-    if (!onMapClick) return;
-    
-    const handleClick = (e: L.LeafletMouseEvent) => {
-      const { lat, lng } = e.latlng;
-      onMapClick({ latitude: lat, longitude: lng });
-    };
-    
-    map.on('click', handleClick);
-    
-    return () => {
-      map.off('click', handleClick);
-    };
-  }, [map, onMapClick]);
-  
-  return null;
-};
-
-interface MarkerData {
+interface MarkerPosition {
   position: GeoPoint;
   popup?: string;
-  onClick?: () => void;
 }
 
 interface LeafletMapProps {
   center: GeoPoint;
   zoom?: number;
-  markers?: MarkerData[];
+  markers?: MarkerPosition[];
+  height?: string;
   onMapClick?: (position: GeoPoint) => void;
-  userLocation?: GeoPoint;
-  locationRadius?: number;
+  mapType?: 'standard' | 'satellite';
 }
 
-const LeafletMap = ({
+const LeafletMap: React.FC<LeafletMapProps> = ({
   center,
   zoom = 13,
   markers = [],
+  height = '400px',
   onMapClick,
-  userLocation,
-  locationRadius = 10000 // Default 10km in meters
-}: LeafletMapProps) => {
-  const [mapLoaded, setMapLoaded] = useState(false);
+  mapType = 'standard'
+}) => {
   const mapRef = useRef<L.Map | null>(null);
-  
-  // Convert GeoPoint to LatLng array format for react-leaflet
-  const centerPosition: [number, number] = [center.latitude, center.longitude];
+  const markerRefs = useRef<L.Marker[]>([]);
+  const [mapReady, setMapReady] = useState(false);
 
-  return (
-    <div className="w-full h-full min-h-[300px] rounded-lg overflow-hidden">
-      <MapContainer
-        center={centerPosition}
-        zoom={zoom}
-        style={{ height: '100%', width: '100%' }}
-        whenReady={() => {
-          setMapLoaded(true);
-        }}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        
-        {/* Update view when center changes */}
-        <ChangeMapView center={centerPosition} zoom={zoom} />
-        
-        {/* Add click handler */}
-        {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
-        
-        {/* Show user location with radius */}
-        {userLocation && (
-          <>
-            <Marker 
-              position={[userLocation.latitude, userLocation.longitude]}
-              icon={L.divIcon({
-                className: 'bg-primary rounded-full border-2 border-white shadow-lg',
-                iconSize: [30, 30],
-                html: '<div class="bg-primary w-full h-full rounded-full flex items-center justify-center text-white">You</div>'
-              })}
-            >
-              <Popup>Your Location</Popup>
-            </Marker>
-            
-            <Circle
-              center={[userLocation.latitude, userLocation.longitude]}
-              radius={locationRadius}
-              fillColor="#3b82f6"
-              fillOpacity={0.1}
-              stroke={true}
-              color="#3b82f6"
-            />
-          </>
-        )}
-        
-        {/* Display all markers */}
-        {markers.map((marker, index) => (
-          <Marker
-            key={`marker-${index}`}
-            position={[marker.position.latitude, marker.position.longitude]}
-            eventHandlers={{
-              click: marker.onClick
-            }}
-          >
-            {marker.popup && <Popup>{marker.popup}</Popup>}
-          </Marker>
-        ))}
-      </MapContainer>
-    </div>
-  );
+  // Initialize map
+  useEffect(() => {
+    const mapContainer = document.createElement('div');
+    mapContainer.style.height = '100%';
+    
+    const mapElement = document.getElementById('leaflet-map');
+    if (mapElement) {
+      mapElement.innerHTML = '';
+      mapElement.appendChild(mapContainer);
+      
+      // Create map
+      const map = L.map(mapContainer).setView(
+        [center.latitude, center.longitude],
+        zoom
+      );
+
+      // Add map tiles based on type
+      if (mapType === 'satellite') {
+        // Esri Satellite layer
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        }).addTo(map);
+      } else {
+        // Standard OpenStreetMap layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+      }
+      
+      // Add click handler
+      if (onMapClick) {
+        map.on('click', (e) => {
+          onMapClick({
+            latitude: e.latlng.lat,
+            longitude: e.latlng.lng
+          });
+        });
+      }
+      
+      // Save map reference
+      mapRef.current = map;
+      setMapReady(true);
+      
+      // Cleanup
+      return () => {
+        map.remove();
+        mapRef.current = null;
+      };
+    }
+  }, [mapType]); // Re-create map when mapType changes
+
+  // Update markers and center/zoom whenever they change or the map is ready
+  useEffect(() => {
+    if (!mapRef.current || !mapReady) return;
+    
+    // Clear existing markers
+    markerRefs.current.forEach(marker => marker.remove());
+    markerRefs.current = [];
+    
+    // Add markers
+    markers.forEach(({ position, popup }) => {
+      const marker = L.marker(
+        [position.latitude, position.longitude],
+        { icon: defaultIcon }
+      ).addTo(mapRef.current!);
+      
+      if (popup) {
+        marker.bindPopup(popup);
+      }
+      
+      markerRefs.current.push(marker);
+    });
+    
+    // Center and zoom
+    mapRef.current.setView([center.latitude, center.longitude], zoom);
+    
+  }, [markers, center, zoom, mapReady]);
+  
+  return <div id="leaflet-map" style={{ height, width: '100%' }} />;
 };
 
 export default LeafletMap;

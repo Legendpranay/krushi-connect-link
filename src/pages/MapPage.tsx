@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,11 +8,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Search, Star, MapPin } from 'lucide-react';
-import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, updateDoc, doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { DriverProfile, GeoPoint } from '../types';
+import { DriverProfile, GeoPoint, FarmerProfile } from '../types';
 import LeafletMap from '../components/map/LeafletMap';
 import { toast } from '@/components/ui/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -34,6 +41,11 @@ const MapPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDriverId, setSelectedDriverId] = useState<string | null>(null);
   const [maxDistance, setMaxDistance] = useState<number>(10); // 10km default radius
+  
+  // Farm locations dialog
+  const [farmLocations, setFarmLocations] = useState<any[]>([]);
+  const [showFarmLocationsDialog, setShowFarmLocationsDialog] = useState(false);
+  const [selectedFarmLocation, setSelectedFarmLocation] = useState<any | null>(null);
 
   useEffect(() => {
     const fetchDrivers = async () => {
@@ -41,6 +53,23 @@ const MapPage = () => {
         // Get user's location from profile if available
         if (userProfile?.role === 'farmer' && userProfile.farmLocation) {
           setUserLocation(userProfile.farmLocation);
+          
+          // Also fetch farm locations if user is a farmer
+          if (userProfile.id) {
+            const farmLocationsRef = collection(db, 'farmLocations');
+            const q = query(farmLocationsRef, where('userId', '==', userProfile.id));
+            const snapshot = await getDocs(q);
+            
+            const locations: any[] = [];
+            snapshot.forEach((doc) => {
+              locations.push({
+                id: doc.id,
+                ...doc.data()
+              });
+            });
+            
+            setFarmLocations(locations);
+          }
         } else {
           // Try to get current location
           navigator.geolocation.getCurrentPosition((position) => {
@@ -148,6 +177,23 @@ const MapPage = () => {
     return distance;
   };
 
+  const handleViewFarmLocations = () => {
+    setShowFarmLocationsDialog(true);
+  };
+
+  const handleSelectFarmLocation = (location: any) => {
+    setSelectedFarmLocation(location);
+    setUserLocation({
+      latitude: location.location.latitude,
+      longitude: location.location.longitude
+    });
+    setShowFarmLocationsDialog(false);
+    
+    toast({
+      description: `Showing drivers near ${location.name}`
+    });
+  };
+
   // Sort drivers by distance
   const sortedDrivers = [...filteredDrivers].sort((a, b) => {
     const distanceA = a.location ? 
@@ -192,6 +238,18 @@ const MapPage = () => {
     popup: driver.name || 'Driver',
     onClick: () => setSelectedDriverId(driver.id)
   })).filter(marker => marker.position.latitude && marker.position.longitude);
+  
+  // Add farm location markers if we have a selected farm location
+  if (selectedFarmLocation) {
+    mapMarkers.push({
+      position: {
+        latitude: selectedFarmLocation.location.latitude,
+        longitude: selectedFarmLocation.location.longitude
+      },
+      popup: `Farm: ${selectedFarmLocation.name}`,
+      onClick: () => {}
+    });
+  }
 
   return (
     <UserContainer>
@@ -230,6 +288,20 @@ const MapPage = () => {
             </Select>
           </div>
         </div>
+        
+        {/* Farm locations button for farmers */}
+        {userProfile?.role === 'farmer' && farmLocations.length > 0 && (
+          <div className="mb-4">
+            <Button 
+              onClick={handleViewFarmLocations}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <MapPin className="h-4 w-4" />
+              View My Farm Locations
+            </Button>
+          </div>
+        )}
         
         {/* Map */}
         <div className="mb-6 border border-gray-200 rounded-lg shadow-sm">
@@ -310,14 +382,16 @@ const MapPage = () => {
                         <Button 
                           size="sm" 
                           onClick={() => navigate(`/driver/profile/${driver.id}`)}
-                          className="bg-primary hover:bg-primary-600"
                         >
                           {t('map.viewProfile')}
                         </Button>
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => navigate(`/booking/new/${driver.id}`)}
+                          onClick={() => {
+                            // Fix booking navigation
+                            navigate(`/booking/new/${driver.id}`);
+                          }}
                           className="border-primary text-primary hover:bg-primary/10"
                         >
                           {t('map.book')}
@@ -351,6 +425,42 @@ const MapPage = () => {
           </Card>
         )}
       </div>
+
+      {/* Farm locations dialog */}
+      <Dialog open={showFarmLocationsDialog} onOpenChange={setShowFarmLocationsDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>My Farm Locations</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            {farmLocations.length > 0 ? (
+              <div className="space-y-2">
+                {farmLocations.map(location => (
+                  <Card 
+                    key={location.id} 
+                    className="cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => handleSelectFarmLocation(location)}
+                  >
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-3">
+                        <MapPin className="h-5 w-5 text-primary" />
+                        <div>
+                          <h4 className="font-medium">{location.name}</h4>
+                          <p className="text-xs text-gray-500">
+                            {location.size} acres
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-gray-500">No farm locations found</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </UserContainer>
   );
 };

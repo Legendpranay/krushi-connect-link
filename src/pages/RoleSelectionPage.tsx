@@ -1,36 +1,40 @@
 
-import React from 'react';
-import { Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import RoleSelectionForm from '../components/RoleSelectionForm';
-import UserContainer from '../components/UserContainer';
+import SimplifiedRoleSelector from '../components/SimplifiedRoleSelector';
 
 const RoleSelectionPage = () => {
-  const { currentUser, userProfile } = useAuth();
+  const { userProfile } = useAuth();
+  const { t } = useLanguage();
+  const navigate = useNavigate();
 
-  // If not logged in, redirect to auth page
-  if (!currentUser) {
-    return <Navigate to="/auth" />;
-  }
-
-  // If already has a role and profile is complete, redirect to home
-  if (userProfile?.role && userProfile?.isProfileComplete) {
-    return <Navigate to="/" />;
-  }
-
-  // If has role but profile is incomplete, redirect to the appropriate profile completion page
-  if (userProfile?.role && !userProfile?.isProfileComplete) {
-    if (userProfile.role === 'farmer') {
-      return <Navigate to="/complete-farmer-profile" />;
-    } else if (userProfile.role === 'driver') {
-      return <Navigate to="/complete-driver-profile" />;
+  useEffect(() => {
+    // Redirect to home if user already has a role
+    if (userProfile?.role) {
+      navigate('/');
     }
-  }
+    
+    // Redirect to auth if user is not logged in
+    if (!userProfile) {
+      navigate('/auth');
+    }
+  }, [userProfile, navigate]);
 
   return (
-    <UserContainer hideBottomNav>
-      <RoleSelectionForm />
-    </UserContainer>
+    <div className="container mx-auto px-4 py-12">
+      <div className="text-center mb-10">
+        <h1 className="text-3xl font-bold mb-3">{t('roleSelection.title')}</h1>
+        <p className="text-gray-600 max-w-2xl mx-auto">
+          {t('roleSelection.description')}
+        </p>
+      </div>
+
+      {/* Using our new simplified role selector */}
+      <SimplifiedRoleSelector />
+    </div>
   );
 };
 

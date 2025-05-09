@@ -31,6 +31,30 @@ const ChangeCenter = ({ center }: { center: GeoPoint }) => {
   return null;
 };
 
+// Custom component to handle map clicks
+const MapClickHandler = ({ onMapClick }: { onMapClick?: (location: GeoPoint) => void }) => {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (!onMapClick) return;
+    
+    const handleClick = (e: any) => {
+      onMapClick({
+        latitude: e.latlng.lat,
+        longitude: e.latlng.lng,
+      });
+    };
+    
+    map.on('click', handleClick);
+    
+    return () => {
+      map.off('click', handleClick);
+    };
+  }, [map, onMapClick]);
+  
+  return null;
+};
+
 // Default marker icon
 const defaultIcon = new Icon({
   iconUrl: '/path/to/marker-icon.png',
@@ -91,14 +115,6 @@ const LeafletMap: React.FC<LeafletMapProps> = ({
       doubleClickZoom={interactive}
       zoomControl={interactive}
       ref={mapRef}
-      onClick={(e) => {
-        if (onMapClick) {
-          onMapClick({
-            latitude: e.latlng.lat,
-            longitude: e.latlng.lng,
-          });
-        }
-      }}
     >
       <TileLayer
         attribution={getTileAttribution()}
@@ -106,6 +122,9 @@ const LeafletMap: React.FC<LeafletMapProps> = ({
       />
       
       <ChangeCenter center={center} />
+      
+      {/* Add click handler component */}
+      {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
       
       {/* User location circle */}
       {userLocation && (

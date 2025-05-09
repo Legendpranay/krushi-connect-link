@@ -17,6 +17,7 @@ import MorePage from "./pages/MorePage";
 import RoleSelectionPage from "./pages/RoleSelectionPage";
 import CompleteFarmerProfilePage from "./pages/CompleteFarmerProfilePage";
 import CompleteDriverProfilePage from "./pages/CompleteDriverProfilePage";
+import DriverRegistrationPage from "./pages/DriverRegistrationPage";
 import DriverProfilePage from "./pages/DriverProfilePage";
 import CreateBookingPage from "./pages/CreateBookingPage";
 import DriverServicesPage from "./pages/DriverServicesPage";
@@ -47,6 +48,7 @@ const App = () => (
               <Route path="/select-role" element={<RoleSelectionPage />} />
               <Route path="/complete-farmer-profile" element={<CompleteFarmerProfilePage />} />
               <Route path="/complete-driver-profile" element={<CompleteDriverProfilePage />} />
+              <Route path="/driver-registration" element={<DriverRegistrationPage />} />
               <Route path="/" element={<HomePage />} />
               <Route path="/map" element={<MapPage />} />
               <Route path="/bookings" element={<BookingsPage />} />

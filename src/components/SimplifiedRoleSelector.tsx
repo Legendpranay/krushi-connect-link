@@ -4,10 +4,41 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/components/ui/use-toast';
 
 const SimplifiedRoleSelector = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { updateUserProfile } = useAuth();
+
+  const handleRoleSelection = async (role: 'farmer' | 'driver') => {
+    try {
+      // Update user profile with selected role
+      await updateUserProfile({
+        role,
+        isProfileComplete: false
+      });
+      
+      // Navigate to appropriate profile completion page
+      if (role === 'farmer') {
+        navigate('/complete-farmer-profile');
+      } else {
+        navigate('/complete-driver-profile');
+      }
+    } catch (error) {
+      console.error('Error selecting role:', error);
+      toast({
+        title: "Error",
+        description: "Failed to select role. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleQuickDriverRegistration = () => {
+    navigate('/driver-registration');
+  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
@@ -39,7 +70,7 @@ const SimplifiedRoleSelector = () => {
               {t('roleSelection.farmerDescription')}
             </p>
             <Button
-              onClick={() => navigate('/complete-farmer-profile')}
+              onClick={() => handleRoleSelection('farmer')}
               className="w-full bg-green-600 hover:bg-green-700"
             >
               {t('roleSelection.selectFarmer')}
@@ -76,13 +107,13 @@ const SimplifiedRoleSelector = () => {
             </p>
             <div className="space-y-2 w-full">
               <Button
-                onClick={() => navigate('/complete-driver-profile')}
+                onClick={() => handleRoleSelection('driver')}
                 className="w-full bg-blue-600 hover:bg-blue-700"
               >
                 {t('roleSelection.selectDriver')} (Full Profile)
               </Button>
               <Button
-                onClick={() => navigate('/driver-registration')}
+                onClick={handleQuickDriverRegistration}
                 variant="outline"
                 className="w-full border-blue-600 text-blue-600 hover:bg-blue-50"
               >

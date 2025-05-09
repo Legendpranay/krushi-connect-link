@@ -5,8 +5,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
 import PersonalInfoSection from '../components/driver/PersonalInfoSection';
 import { useLanguage } from '@/contexts/LanguageContext';
 

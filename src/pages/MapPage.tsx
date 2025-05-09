@@ -251,6 +251,10 @@ const MapPage = () => {
     });
   }
 
+  const handleBookDriver = (driverId: string) => {
+    navigate(`/booking/new/${driverId}`);
+  };
+
   return (
     <UserContainer>
       <div className="mb-4 p-4">
@@ -388,10 +392,7 @@ const MapPage = () => {
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => {
-                            // Fix booking navigation
-                            navigate(`/booking/new/${driver.id}`);
-                          }}
+                          onClick={() => handleBookDriver(driver.id)}
                           className="border-primary text-primary hover:bg-primary/10"
                         >
                           {t('map.book')}

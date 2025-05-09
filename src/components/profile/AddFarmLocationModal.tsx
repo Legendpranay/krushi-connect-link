@@ -170,7 +170,7 @@ const AddFarmLocationModal: React.FC<AddFarmLocationModalProps> = ({
                     popup: locationName || "New Farm Location"
                   }
                 ] : []}
-                mapType="satellite" // Set map to satellite view
+                mapType="satellite"
               />
             </div>
             {selectedLocation && (

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
 import { GeoPoint } from '../../types';
@@ -16,6 +17,7 @@ export interface LeafletMapProps {
   userLocation?: GeoPoint;
   locationRadius?: number;
   interactive?: boolean;
+  mapType?: 'standard' | 'satellite' | 'terrain';
 }
 
 // Create a custom hook to handle map center changes
@@ -45,9 +47,39 @@ const LeafletMap: React.FC<LeafletMapProps> = ({
   userLocation,
   locationRadius = 5000,
   interactive = true,
+  mapType = 'standard',
 }) => {
   // Use ref to access the map
   const mapRef = useRef(null);
+
+  // Determine which tile URL to use based on mapType
+  const getTileUrl = () => {
+    switch (mapType) {
+      case 'satellite':
+        // Using an open satellite imagery layer
+        return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+      case 'terrain':
+        // Using an open terrain layer
+        return 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
+      case 'standard':
+      default:
+        // Standard OpenStreetMap tiles
+        return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    }
+  };
+
+  // Determine which attribution to use based on mapType
+  const getTileAttribution = () => {
+    switch (mapType) {
+      case 'satellite':
+        return '&copy; <a href="https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9">Esri</a>';
+      case 'terrain':
+        return '&copy; <a href="https://opentopomap.org">OpenTopoMap</a>';
+      case 'standard':
+      default:
+        return '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+    }
+  };
 
   return (
     <MapContainer
@@ -59,10 +91,18 @@ const LeafletMap: React.FC<LeafletMapProps> = ({
       doubleClickZoom={interactive}
       zoomControl={interactive}
       ref={mapRef}
+      onClick={(e) => {
+        if (onMapClick) {
+          onMapClick({
+            latitude: e.latlng.lat,
+            longitude: e.latlng.lng,
+          });
+        }
+      }}
     >
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution={getTileAttribution()}
+        url={getTileUrl()}
       />
       
       <ChangeCenter center={center} />

@@ -16,7 +16,7 @@ const CompleteFarmerProfilePage = () => {
       toast({
         description: "Your profile is already complete!"
       });
-      navigate('/');
+      navigate('/', { replace: true });
     }
   }, [userProfile, navigate]);
 

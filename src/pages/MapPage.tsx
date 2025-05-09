@@ -198,8 +198,9 @@ const MapPage = () => {
       <div className="mb-4 p-4">
         <h2 className="text-2xl font-bold mb-4">{t('map.nearbyDrivers')}</h2>
         
+        {/* Search bar */}
         <div className="flex flex-wrap gap-4 mb-4">
-          {/* Search bar */}
+          {/* Search input */}
           <div className="relative flex-1">
             <Input
               type="text"

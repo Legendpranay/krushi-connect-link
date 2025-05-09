@@ -1,24 +1,19 @@
 
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/use-toast';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage, db } from '../../lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Equipment } from '../../types';
 import PersonalInfoSection from './PersonalInfoSection';
 import ProfileImageSection from './ProfileImageSection';
 import TractorDetailsSection from './TractorDetailsSection';
 import EquipmentSection from './EquipmentSection';
+import { useDriverProfileSubmit } from '../../hooks/useDriverProfileSubmit';
 
 const DriverProfileForm = () => {
-  const { userProfile, updateUserProfile } = useAuth();
-  const navigate = useNavigate();
-  const [isLoading, setIsLoading] = React.useState(false);
+  const { userProfile } = useAuth();
+  const { isLoading, handleSubmit } = useDriverProfileSubmit();
   
-  const [formData, setFormData] = React.useState({
+  const [formData, setFormData] = useState({
     name: userProfile?.name || '',
     village: userProfile?.village || '',
     district: userProfile?.district || '',
@@ -26,15 +21,15 @@ const DriverProfileForm = () => {
     tractorType: userProfile?.tractorType || '',
   });
   
-  const [profileImage, setProfileImage] = React.useState<File | null>(null);
-  const [tractorImage, setTractorImage] = React.useState<File | null>(null);
-  const [licenseImage, setLicenseImage] = React.useState<File | null>(null);
-  const [equipment, setEquipment] = React.useState<Equipment[]>([
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [tractorImage, setTractorImage] = useState<File | null>(null);
+  const [licenseImage, setLicenseImage] = useState<File | null>(null);
+  const [equipment, setEquipment] = useState<Equipment[]>([
     { id: '1', name: '', pricePerAcre: 0 }
   ]);
 
   // Pre-populate equipment if it exists
-  React.useEffect(() => {
+  useEffect(() => {
     if (userProfile?.equipment && userProfile.equipment.length > 0) {
       setEquipment(userProfile.equipment);
     }
@@ -48,160 +43,9 @@ const DriverProfileForm = () => {
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Prevent multiple submissions
-    if (isLoading) {
-      console.log("Form submission prevented - already loading");
-      return;
-    }
-    
-    setIsLoading(true);
-    console.log('Driver profile form submission started');
-    
-    try {
-      // Validate form
-      if (!formData.name || !formData.village || !formData.tractorType) {
-        toast({
-          title: 'Error',
-          description: 'Please fill in all required fields',
-          variant: 'destructive',
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      // Validate equipment
-      const isEquipmentValid = equipment.every(item => item.name && item.pricePerAcre > 0);
-      if (!isEquipmentValid) {
-        toast({
-          title: 'Error',
-          description: 'Please fill in all equipment details',
-          variant: 'destructive',
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      // Validate required images
-      if (!tractorImage && !userProfile?.tractorImage) {
-        toast({
-          title: 'Error',
-          description: 'Please upload a tractor image',
-          variant: 'destructive',
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      if (!licenseImage && !userProfile?.licenseImage) {
-        toast({
-          title: 'Error',
-          description: 'Please upload a license image',
-          variant: 'destructive',
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      console.log('Starting profile image upload process');
-      // Upload images
-      let profileImageUrl = userProfile?.profileImage || '';
-      let tractorImageUrl = userProfile?.tractorImage || '';
-      let licenseImageUrl = userProfile?.licenseImage || '';
-      
-      if (profileImage) {
-        const imageRef = ref(storage, `profile-images/${userProfile?.id}/${Date.now()}`);
-        await uploadBytes(imageRef, profileImage);
-        profileImageUrl = await getDownloadURL(imageRef);
-        console.log('Profile image uploaded:', profileImageUrl);
-      }
-      
-      console.log('Starting tractor image upload process');
-      if (tractorImage) {
-        const imageRef = ref(storage, `tractor-images/${userProfile?.id}/${Date.now()}`);
-        await uploadBytes(imageRef, tractorImage);
-        tractorImageUrl = await getDownloadURL(imageRef);
-        console.log('Tractor image uploaded:', tractorImageUrl);
-      }
-      
-      console.log('Starting license image upload process');
-      if (licenseImage) {
-        const imageRef = ref(storage, `license-images/${userProfile?.id}/${Date.now()}`);
-        await uploadBytes(imageRef, licenseImage);
-        licenseImageUrl = await getDownloadURL(imageRef);
-        console.log('License image uploaded:', licenseImageUrl);
-      }
-      
-      console.log('Starting equipment saving process');
-      // Save equipment to Firestore
-      const savedEquipment: Equipment[] = [];
-      for (const item of equipment) {
-        // Skip empty equipment
-        if (!item.name || item.pricePerAcre <= 0) continue;
-        
-        console.log('Saving equipment item:', item);
-        try {
-          const equipmentRef = await addDoc(collection(db, 'equipment'), {
-            name: item.name,
-            pricePerAcre: item.pricePerAcre,
-            pricePerHour: item.pricePerHour || null,
-            driverId: userProfile?.id,
-            createdAt: serverTimestamp()
-          });
-          
-          savedEquipment.push({
-            id: equipmentRef.id,
-            name: item.name,
-            pricePerAcre: item.pricePerAcre,
-            pricePerHour: item.pricePerHour
-          });
-          console.log('Equipment saved successfully:', equipmentRef.id);
-        } catch (equipError) {
-          console.error('Error saving equipment item:', equipError);
-          // Continue with other equipment items even if one fails
-        }
-      }
-      
-      console.log('Updating user profile');
-      // Update user profile with all collected data
-      const profileData = {
-        ...formData,
-        profileImage: profileImageUrl,
-        tractorImage: tractorImageUrl,
-        licenseImage: licenseImageUrl,
-        isProfileComplete: true,
-        role: 'driver' as const,
-        isActive: false, // Start as offline
-        equipment: savedEquipment
-      };
-      
-      console.log('Sending profile update with data:', profileData);
-      
-      // Update user profile
-      await updateUserProfile(profileData);
-      console.log('Profile update successful');
-      
-      toast({
-        description: 'Profile updated successfully!',
-      });
-      
-      // Important: Make sure we reset the loading state before navigation
-      setIsLoading(false);
-      
-      // Navigate immediately to the home page after successful update
-      navigate('/', { replace: true });
-      
-    } catch (error) {
-      console.error('Error updating driver profile:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update profile. Please try again.',
-        variant: 'destructive',
-      });
-      setIsLoading(false);
-    }
+    handleSubmit(formData, profileImage, tractorImage, licenseImage, equipment);
   };
 
   return (
@@ -210,7 +54,7 @@ const DriverProfileForm = () => {
         Complete Your Profile
       </h2>
       
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={onSubmit} className="space-y-4">
         <h3 className="text-lg font-semibold">My Profile</h3>
         
         <PersonalInfoSection 

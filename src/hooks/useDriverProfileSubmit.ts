@@ -1,0 +1,184 @@
+
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from '@/components/ui/use-toast';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage, db } from '../lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { Equipment, DriverProfile } from '../types';
+import { useAuth } from '../contexts/AuthContext';
+
+export const useDriverProfileSubmit = () => {
+  const { userProfile, updateUserProfile } = useAuth();
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (
+    formData: {
+      name: string;
+      village: string;
+      district: string;
+      state: string;
+      tractorType: string;
+    },
+    profileImage: File | null,
+    tractorImage: File | null,
+    licenseImage: File | null,
+    equipment: Equipment[]
+  ) => {
+    // Prevent multiple submissions
+    if (isLoading) {
+      console.log("Form submission prevented - already loading");
+      return;
+    }
+    
+    setIsLoading(true);
+    console.log('Driver profile form submission started');
+    
+    try {
+      // Validate form
+      if (!formData.name || !formData.village || !formData.tractorType) {
+        toast({
+          title: 'Error',
+          description: 'Please fill in all required fields',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Validate equipment
+      const isEquipmentValid = equipment.every(item => item.name && item.pricePerAcre > 0);
+      if (!isEquipmentValid) {
+        toast({
+          title: 'Error',
+          description: 'Please fill in all equipment details',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Validate required images
+      if (!tractorImage && !userProfile?.tractorImage) {
+        toast({
+          title: 'Error',
+          description: 'Please upload a tractor image',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (!licenseImage && !userProfile?.licenseImage) {
+        toast({
+          title: 'Error',
+          description: 'Please upload a license image',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      console.log('Starting profile image upload process');
+      // Upload images
+      let profileImageUrl = userProfile?.profileImage || '';
+      let tractorImageUrl = userProfile?.tractorImage || '';
+      let licenseImageUrl = userProfile?.licenseImage || '';
+      
+      if (profileImage) {
+        const imageRef = ref(storage, `profile-images/${userProfile?.id}/${Date.now()}`);
+        await uploadBytes(imageRef, profileImage);
+        profileImageUrl = await getDownloadURL(imageRef);
+        console.log('Profile image uploaded:', profileImageUrl);
+      }
+      
+      console.log('Starting tractor image upload process');
+      if (tractorImage) {
+        const imageRef = ref(storage, `tractor-images/${userProfile?.id}/${Date.now()}`);
+        await uploadBytes(imageRef, tractorImage);
+        tractorImageUrl = await getDownloadURL(imageRef);
+        console.log('Tractor image uploaded:', tractorImageUrl);
+      }
+      
+      console.log('Starting license image upload process');
+      if (licenseImage) {
+        const imageRef = ref(storage, `license-images/${userProfile?.id}/${Date.now()}`);
+        await uploadBytes(imageRef, licenseImage);
+        licenseImageUrl = await getDownloadURL(imageRef);
+        console.log('License image uploaded:', licenseImageUrl);
+      }
+      
+      console.log('Starting equipment saving process');
+      // Save equipment to Firestore
+      const savedEquipment: Equipment[] = [];
+      for (const item of equipment) {
+        // Skip empty equipment
+        if (!item.name || item.pricePerAcre <= 0) continue;
+        
+        console.log('Saving equipment item:', item);
+        try {
+          const equipmentRef = await addDoc(collection(db, 'equipment'), {
+            name: item.name,
+            pricePerAcre: item.pricePerAcre,
+            pricePerHour: item.pricePerHour || null,
+            driverId: userProfile?.id,
+            createdAt: serverTimestamp()
+          });
+          
+          savedEquipment.push({
+            id: equipmentRef.id,
+            name: item.name,
+            pricePerAcre: item.pricePerAcre,
+            pricePerHour: item.pricePerHour
+          });
+          console.log('Equipment saved successfully:', equipmentRef.id);
+        } catch (equipError) {
+          console.error('Error saving equipment item:', equipError);
+          // Continue with other equipment items even if one fails
+        }
+      }
+      
+      console.log('Updating user profile');
+      // Update user profile with all collected data
+      const profileData = {
+        ...formData,
+        profileImage: profileImageUrl,
+        tractorImage: tractorImageUrl,
+        licenseImage: licenseImageUrl,
+        isProfileComplete: true,
+        role: 'driver' as const,
+        isActive: false, // Start as offline
+        equipment: savedEquipment
+      };
+      
+      console.log('Sending profile update with data:', profileData);
+      
+      // Update user profile
+      await updateUserProfile(profileData);
+      console.log('Profile update successful');
+      
+      toast({
+        description: 'Profile updated successfully!',
+      });
+      
+      setIsLoading(false);
+      
+      // Navigate to the home page after successful update
+      navigate('/', { replace: true });
+      
+    } catch (error) {
+      console.error('Error updating driver profile:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update profile. Please try again.',
+        variant: 'destructive',
+      });
+      setIsLoading(false);
+    }
+  };
+
+  return { isLoading, handleSubmit };
+};
+
+export default useDriverProfileSubmit;

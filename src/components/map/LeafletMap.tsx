@@ -14,9 +14,20 @@ const defaultIcon = L.icon({
   shadowSize: [41, 41]
 });
 
+// User location icon (blue)
+const userLocationIcon = L.icon({
+  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
 interface MarkerPosition {
   position: GeoPoint;
   popup?: string;
+  onClick?: () => void;
 }
 
 interface LeafletMapProps {
@@ -26,6 +37,8 @@ interface LeafletMapProps {
   height?: string;
   onMapClick?: (position: GeoPoint) => void;
   mapType?: 'standard' | 'satellite';
+  userLocation?: GeoPoint;  // Added prop for user's location
+  locationRadius?: number;  // Added prop for radius around user location
 }
 
 const LeafletMap: React.FC<LeafletMapProps> = ({
@@ -34,10 +47,13 @@ const LeafletMap: React.FC<LeafletMapProps> = ({
   markers = [],
   height = '400px',
   onMapClick,
-  mapType = 'standard'
+  mapType = 'standard',
+  userLocation,
+  locationRadius
 }) => {
   const mapRef = useRef<L.Map | null>(null);
   const markerRefs = useRef<L.Marker[]>([]);
+  const radiusCircleRef = useRef<L.Circle | null>(null);
   const [mapReady, setMapReady] = useState(false);
 
   // Initialize map
@@ -100,7 +116,7 @@ const LeafletMap: React.FC<LeafletMapProps> = ({
     markerRefs.current = [];
     
     // Add markers
-    markers.forEach(({ position, popup }) => {
+    markers.forEach(({ position, popup, onClick }) => {
       const marker = L.marker(
         [position.latitude, position.longitude],
         { icon: defaultIcon }
@@ -108,6 +124,10 @@ const LeafletMap: React.FC<LeafletMapProps> = ({
       
       if (popup) {
         marker.bindPopup(popup);
+      }
+
+      if (onClick) {
+        marker.on('click', onClick);
       }
       
       markerRefs.current.push(marker);
@@ -117,6 +137,31 @@ const LeafletMap: React.FC<LeafletMapProps> = ({
     mapRef.current.setView([center.latitude, center.longitude], zoom);
     
   }, [markers, center, zoom, mapReady]);
+
+  // Add user location and radius circle
+  useEffect(() => {
+    if (!mapRef.current || !mapReady || !userLocation) return;
+
+    // Remove existing radius circle if it exists
+    if (radiusCircleRef.current) {
+      radiusCircleRef.current.remove();
+      radiusCircleRef.current = null;
+    }
+
+    // Add radius circle if locationRadius is provided
+    if (locationRadius && locationRadius > 0) {
+      radiusCircleRef.current = L.circle(
+        [userLocation.latitude, userLocation.longitude],
+        {
+          radius: locationRadius,
+          color: 'blue',
+          fillColor: '#30f',
+          fillOpacity: 0.1,
+          weight: 1
+        }
+      ).addTo(mapRef.current);
+    }
+  }, [userLocation, locationRadius, mapReady]);
   
   return <div id="leaflet-map" style={{ height, width: '100%' }} />;
 };

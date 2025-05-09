@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -107,7 +106,7 @@ const MapPage = () => {
     setFilteredDrivers(filtered);
   }, [searchQuery, drivers]);
 
-  const handleLocationSelect = async (location: { latitude: number; longitude: number; address?: string }) => {
+  const handleLocationSelect = async (location: GeoPoint) => {
     setUserLocation({
       latitude: location.latitude,
       longitude: location.longitude

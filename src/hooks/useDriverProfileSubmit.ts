@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage, db } from '../lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { Equipment, DriverProfile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -154,7 +154,16 @@ export const useDriverProfileSubmit = () => {
       
       console.log('Sending profile update with data:', profileData);
       
-      // Update user profile
+      // Update user profile in Firestore if userProfile.id exists
+      if (userProfile?.id) {
+        const userRef = doc(db, 'users', userProfile.id);
+        await updateDoc(userRef, {
+          ...profileData,
+          updatedAt: serverTimestamp()
+        });
+      }
+      
+      // Update user profile in context
       await updateUserProfile(profileData);
       console.log('Profile update successful');
       

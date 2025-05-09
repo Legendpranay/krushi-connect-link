@@ -8,6 +8,7 @@ import ProfileImageSection from './ProfileImageSection';
 import TractorDetailsSection from './TractorDetailsSection';
 import EquipmentSection from './EquipmentSection';
 import { useDriverProfileSubmit } from '../../hooks/useDriverProfileSubmit';
+import ProfileFormSubmitButton from './ProfileFormSubmitButton';
 
 const DriverProfileForm = () => {
   const { userProfile } = useAuth();
@@ -86,18 +87,7 @@ const DriverProfileForm = () => {
           t={(key) => key}
         />
         
-        <Button 
-          type="submit" 
-          className="w-full mt-8" 
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div>
-              Saving...
-            </div>
-          ) : 'Save Profile'}
-        </Button>
+        <ProfileFormSubmitButton isLoading={isLoading} />
       </form>
     </div>
   );

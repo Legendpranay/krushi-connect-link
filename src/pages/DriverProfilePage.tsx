@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -92,7 +91,9 @@ const DriverProfilePage = () => {
     fetchDriverData();
   }, [driverId, navigate]);
 
+  // Fix the handleBook function to use the correct path
   const handleBook = () => {
+    if (!driverId) return;
     navigate(`/booking/new/${driverId}`);
   };
 

@@ -1,2 +1,13 @@
-// This is a read-only file, so we'll create a new component to extend its functionality
-// We'll need to create a new component that will be used in RoleSelectionPage
+
+import React from 'react';
+import SimplifiedRoleSelector from './SimplifiedRoleSelector';
+
+const RoleSelectionForm = () => {
+  return (
+    <div className="w-full max-w-4xl mx-auto">
+      <SimplifiedRoleSelector />
+    </div>
+  );
+};
+
+export default RoleSelectionForm;

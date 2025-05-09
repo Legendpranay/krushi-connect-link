@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import RoleSelectionForm from '../components/RoleSelectionForm';
-import SimplifiedRoleSelector from '../components/SimplifiedRoleSelector';
 
 const RoleSelectionPage = () => {
   const { userProfile } = useAuth();
@@ -32,8 +31,7 @@ const RoleSelectionPage = () => {
         </p>
       </div>
 
-      {/* Using our new simplified role selector */}
-      <SimplifiedRoleSelector />
+      <RoleSelectionForm />
     </div>
   );
 };

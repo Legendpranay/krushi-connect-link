@@ -11,7 +11,7 @@ import PersonalInfoSection from '../components/driver/PersonalInfoSection';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const DriverRegistrationPage = () => {
-  const { userProfile, refreshUserProfile } = useAuth();
+  const { userProfile, updateUserProfile } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,20 +56,15 @@ const DriverRegistrationPage = () => {
     setIsSubmitting(true);
 
     try {
-      const userRef = doc(db, 'users', userProfile.id);
-      
-      // Only update basic info
-      await updateDoc(userRef, {
+      // Update user profile using the context method
+      await updateUserProfile({
         name: formData.name,
         village: formData.village,
         district: formData.district,
         state: formData.state,
         role: 'driver',
-        updatedAt: new Date()
+        isProfileComplete: false // Mark as incomplete since this is just basic info
       });
-
-      // Refresh user profile
-      await refreshUserProfile();
 
       toast({
         description: "Basic details saved successfully! You can complete your profile later."
